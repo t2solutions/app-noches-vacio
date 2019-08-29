@@ -4,6 +4,7 @@ import { ToastAndroid, TextInput, Text, StyleSheet, ImageBackground,
   TouchableOpacity, View} from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scrollview';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { SQLite } from "expo-sqlite";
 
 export default class SignInScreen extends Component {
 	static navigationOptions= ({navigation}) =>({
@@ -20,6 +21,17 @@ export default class SignInScreen extends Component {
 			Password:'',
 			showPass: true,
 		}
+	}
+	componentWillMount = () => {
+		const db = SQLite.openDatabase("nochesvacio.db");
+		console.log(db);
+		db.transaction(
+			tx => {
+				tx.executeSql("select * from usuario", [], (_, { rows }) =>
+					console.log(JSON.stringify(rows))
+				);
+			},
+		);
 	}
 	Valida_Rut( value ){
 		var tmpstr = "";
