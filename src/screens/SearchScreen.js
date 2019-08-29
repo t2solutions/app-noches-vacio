@@ -1,166 +1,156 @@
 import React, { Component } from 'react';
 
-import { Platform, FlatList,LayoutAnimation, StyleSheet, View, Text, ScrollView, UIManager, TouchableOpacity } from 'react-native';
+import { Platform, FlatList,LayoutAnimation, StyleSheet, View, Text, ScrollView, UIManager, TouchableOpacity, Picker } from 'react-native';
 
-class Accordion_Panel extends Component {
+import { SQLite } from 'expo-sqlite';
 
-  constructor() {
+import * as FileSystem from 'expo-file-system';
 
-    super();
+const bd = FileSystem.documentDirectory + '/SQLite/agrosuper.db'
 
-    this.state = {
+const db = SQLite.openDatabase('bd','p','Agrosuper','66');
 
-      updated_Height: 0
+if(db==true)
 
-    }
-  }
+{
 
-  componentWillReceiveProps(update_Props) {
-    if (update_Props.item.expanded) {
-      this.setState(() => {
-        return {
-          updated_Height: null
-        }
-      });
-    }
-    else {
-      this.setState(() => {
-        return {
-          updated_Height: 0
-        }
-      });
-    }
-  }
-
-  shouldComponentUpdate(update_Props, nextState) {
-
-    if (update_Props.item.expanded !== this.props.item.expanded) {
-
-      return true;
-
-    }
-
-    return false;
-
-  }
-
-  render() {
-
-    return (
-
-      <View style={styles.Panel_Holder}>
-
-        <TouchableOpacity activeOpacity={0.7} onPress={this.props.onClickFunction} style={styles.Btn}>
-
-          <Text style={styles.Panel_Button_Text}>{this.props.item.title} </Text>
-
-        </TouchableOpacity>
-
-        <View style={{ height: this.state.updated_Height, overflow: 'hidden' }}>
-
-          <Text style={styles.Panel_text}>
-
-            {this.props.item.body}
-
-          </Text>
-
-        </View>
-
-      </View>
-
-    );
-  }
+ //console.log(bd);
 }
 
-export default class SearchScreen extends Component {
 
-  constructor() {
-    super();
 
-    if (Platform.OS === 'android') {
-
-      UIManager.setLayoutAnimationEnabledExperimental(true)
-
-    }
-
-    const array2 = [
-
-      { expanded: false, title: "Planta", body:"Pollos \nCerdos\nPavos"
-      
-    
-    },
-      { expanded: false, title: "Nivel", body: "N1\n\N2\nN3\nN4\nN5" },
-      { expanded: false, title: "Estrato", body: "Coya1\nCoya2\nCoya3\nCoya4" },
-     
-
-    ];
-
-    this.state = { 
-        
-    AccordionData: [...array2] 
-    
-    
-    
-    }
-    }
-
-  update_Layout = (index) => {
-
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-
-    const array = this.state.AccordionData.map((item) => {
-
-      const newItem = Object.assign({}, item);
-
-      newItem.expanded = false;
-
-      return newItem;
-    });
-
-    array[index].expanded = true;
-
-    this.setState(() => {
-      return {
-        AccordionData: array
-      }
-    });
+db.transaction(
+  tx => {
+    tx.executeSql(`select * from Rol`);
+    console.log(db);
+   
   }
 
+   
+
+);
+
+
+
+
+class SearchScreen extends Component {
+  state = {planta: ''}
+  
+  updatePlanta = (planta) => {
+     this.setState({ planta: planta_origen })
+     this.setState({ planta: planta_destino })
+  }
+
+  updateNivel = (nivel) => {
+    this.setState({ nivel: nivel_origen })
+    this.setState({ nivel: nivel_destino })
+ }
+
+
+ updateEstrato = (estrato) => {
+  this.setState({ estrato: estrato_origen })
+  this.setState({ estrato: estrato_destino })
+}
+
   render() {
+   
     return (
 
-      <View style={{ flex:1, FlexDirection:'column',  justifyContent: 'center', marginTop:0 }}>
+      <View style={{flex: 1, flexDirection: 'column', marginTop:0}}>
+    
+    <View style={styles.RowContainer}>
 
-      
-      <View style={styles.MainContainer}>
+    <Picker
 
-      
+    selectedValue={this.state.planta_origen}
+    style={{ height: 50, width: 100 }}
+    onValueChange={(itemValue, itemIndex) => this.setState({ planta_origen: itemValue })}>
+  
+  <Picker.Item label="Pollos" value="pollos1" />
+  <Picker.Item label="Cerdos" value="cerdos1" />
+  <Picker.Item label="Pavos" value="pavos1" />
 
-        <ScrollView contentContainerStyle={{ paddingHorizontal: 10, paddingVertical: 5 }}>
-          {
-            this.state.AccordionData.map((item, key) =>
-              (
-                <Accordion_Panel key={key} onClickFunction={this.update_Layout.bind(this, key)} item={item} />
-              ))
-          }
-        </ScrollView>
+  
+  </Picker>
 
-        <ScrollView contentContainerStyle={{ paddingHorizontal: 10, paddingVertical: 5 }}>
-          {
-            this.state.AccordionData.map((item, key) =>
-              (
-                <Accordion_Panel key={key} onClickFunction={this.update_Layout.bind(this, key)} item={item} />
-              ))
-          }
-        </ScrollView>   
+  <Picker
 
-          
-       
+    selectedValue={this.state.planta_destino}
+    style={{ height: 50, width: 100 }}
+    onValueChange={(itemValue, itemIndex) => this.setState({ planta_destino: itemValue })}>
+    
+   <Picker.Item label="Pollos" value="pollos2" />
+  <Picker.Item label="Cerdos" value="cerdos2" />
+  <Picker.Item label="Pavos" value="pavos2" />
+
+  </Picker>
+
+
 
     
-        </View>
+</View>
 
-        <TouchableOpacity
+
+<View style={styles.RowContainer}>
+
+<Picker
+selectedValue={this.state.nivel_origen}
+style={{ height: 50, width: 100 }}
+onValueChange={(itemValue, itemIndex) => this.setState({ nivel_origen: itemValue })}>
+<Picker.Item label="N1" value="ni1" />
+<Picker.Item label="N2" value="ni2" />
+<Picker.Item label="N3" value="ni3" />
+<Picker.Item label="N4" value="ni4" />
+<Picker.Item label="N5" value="ni5" />
+
+
+</Picker>
+<Picker
+selectedValue={this.state.nivel_destino}
+style={{ height: 50, width: 100 }}
+onValueChange={(itemValue, itemIndex) => this.setState({ nivel_destino: itemValue })}>
+<Picker.Item label="N1" value="nf1" />
+<Picker.Item label="N2" value="nf2" />
+<Picker.Item label="N3" value="nf3" />
+<Picker.Item label="N4" value="nf4" />
+<Picker.Item label="N5" value="nf5" />
+
+
+</Picker>
+
+
+
+</View>
+
+<View style={styles.RowContainer}>
+
+<Picker
+selectedValue={this.state.estrato_origen}
+style={{ height: 50, width: 100 }}
+onValueChange={(itemValue, itemIndex) => this.setState({ estrato_origen: itemValue })}>
+<Picker.Item label="Coya 1" value="coya1_origen" />
+<Picker.Item label="Coya 2" value="coya2_origen" />
+<Picker.Item label="Coya 3" value="coya3_origen" />
+
+</Picker>
+
+
+<Picker
+
+selectedValue={this.state.estrato_destino}
+style={{ height: 50, width: 100 }}
+onValueChange={(itemValue, itemIndex) => this.setState({ estrato_destino: itemValue })}>
+<Picker.Item label="Coya 1" value="coya1_destino" />
+<Picker.Item label="Coya 2" value="coya2_destino" />
+<Picker.Item label="Coya 3" value="coya3_destino" />
+
+</Picker>
+
+
+
+</View>
+
+<TouchableOpacity
           onPress={() => this.props.navigation.navigate('ShowStack', {
                           P1: 'Pollos',
                           P2: 'Cerdos',
@@ -169,75 +159,40 @@ export default class SearchScreen extends Component {
           <Text style={styles.btnText}>Calcular noches de vacío</Text>        
         </TouchableOpacity>
 
-        
       </View>
 
 
-
-     
-
-      
     );
 
-
+     
   }
-
-
-
-
-  
 }
+export default SearchScreen
 
 const styles = StyleSheet.create({
-
-  MainContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingTop: (Platform.OS === 'ios') ? 20 : 0,
-    width: 300,
-    flexDirection: 'row'
+  text: {
+     fontSize: 30,
+     alignSelf: 'center',
+     color: 'red'
   },
-
-  Panel_text: {
-    fontSize: 18,
-    color: '#000',
-    padding: 10
+  RowContainer: {
+  flex: 1, 
+  flexDirection: 'row',
+  justifyContent:'space-around'
   },
-
-  Panel_Button_Text: {
-    textAlign: 'center',
-    color: '#fff',
-    fontSize: 21
-  },
-
-  Panel_Holder: {
-    borderWidth: 1,
-    borderColor: '#FF6F00',
-    marginVertical: 5
-  },
-
-  Btn: {
-    padding: 10,
-    backgroundColor: '#FF6F00'
-  },
-
   btn: {
     padding: 10,
     backgroundColor: '#FF6F00',
     width:200,
     marginLeft:60,
-    marginBottom:100
+    marginBottom:0
   },
-	btnText:{
-		color: 'black',
-		backgroundColor: 'transparent',
-		fontWeight:'bold'
-  },
- 
+  txt: {
 
+    fontWeight:"bold",
+    fontSize:10,
+    color:"green"
 
+  }
 
-
-
-
-});
+})
