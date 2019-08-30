@@ -4,35 +4,33 @@ import { ToastAndroid, TextInput, Text, StyleSheet, ImageBackground,
   TouchableOpacity, View} from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scrollview';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { SQLite } from "expo-sqlite";
+import { Asset } from 'expo-asset';
+import * as FileSystem from 'expo-file-system';
+const databaseName = "nochesvacio.db";
 
 export default class SignInScreen extends Component {
-	static navigationOptions= ({navigation}) =>({
-		headerStyle:{
-		  backgroundColor: 'transparent', 
-		  zIndex: 100,  
-		},
-		headerTransparent: true,
-	});
-  	constructor(props){
+
+    static navigationOptions= ({navigation}) =>({
+      headerStyle:{
+        backgroundColor: 'transparent', 
+        zIndex: 100,  
+      },
+      headerTransparent: true,
+    });
+
+  	constructor(props) {
 		super(props)
 		this.state={
 			Rut:'',
 			Password:'',
 			showPass: true,
-		}
-	}
-	componentWillMount = () => {
-		const db = SQLite.openDatabase("nochesvacio.db");
-		console.log(db);
-		db.transaction(
-			tx => {
-				tx.executeSql("select * from usuario", [], (_, { rows }) =>
-					console.log(JSON.stringify(rows))
-				);
-			},
-		);
-	}
+    }
+  }
+
+  async componentDidMount() {
+    this.copyDatabase();
+  }
+
 	Valida_Rut( value ){
 		var tmpstr = "";
 		var intlargo = value
@@ -90,9 +88,34 @@ export default class SignInScreen extends Component {
 			//alert('El Rut Ingresado es Correcto!')
 			return true;
 		}
-	}
+  }
+  
+  async copyDatabase() {
+    try {
+      await FileSystem.makeDirectoryAsync(`${FileSystem.documentDirectory}SQLite`, {
+        intermediates: true
+      });
+      const localDatabase = await FileSystem.getInfoAsync(`${FileSystem.documentDirectory}SQLite/${databaseName}`);
+      if ( !localDatabase.exists ) {
+        FileSystem.downloadAsync(
+          Asset.fromModule(require('../../assets/www/'+databaseName)).uri,
+          `${FileSystem.documentDirectory}SQLite/${databaseName}`
+        ).then(({ uri }) => {
+          console.log('✅ Database copy to : ' + uri);
+        })
+        .catch(error => {
+          console.log('❗️ Database copy error : ' + error);
+        })
+      } else {
+        console.log('✅ Database exist');
+      }
+    } catch (error) {
+      console.log('❗️ Error : ' + error);
+    }
+  }
+
 	login = () => {
-		const {Rut, Password} = this.state;
+    const {Rut, Password} = this.state;
 		if(Rut==''){
 			ToastAndroid.show("Por favor ingrese RUT", ToastAndroid.CENTER);
 			return
@@ -104,7 +127,7 @@ export default class SignInScreen extends Component {
 		if(!this.Valida_Rut(Rut)){
 			ToastAndroid.show("Rut no valido", ToastAndroid.CENTER);
 			return
-		}
+    }
 		this.props.navigation.navigate('SearchStack');
 	}
   	render() {
