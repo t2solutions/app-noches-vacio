@@ -134,7 +134,7 @@ export default class SignInScreen extends Component {
     .then( user => {
       setTimeout(function () {
         this.setState({loading: false});
-        navigation.navigate('SearchStack', { user: user });
+        navigation.navigate('SearchScreen', { user: user });
       }.bind(this), 2500);
     })
     .catch( error => {

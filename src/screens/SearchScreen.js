@@ -8,7 +8,7 @@ class SearchScreen extends Component {
 
   static navigationOptions = {
     title: 'Pirámide de Bioseguridad',
-    headerBackTitle: '',
+    headerBackTitle: ' ',
     headerTintColor: 'white',
     headerStyle: {
       backgroundColor: '#0060C0',
@@ -282,10 +282,14 @@ class SearchScreen extends Component {
           SQLiteHelper.setTracking(user.id_usuario, specieOriginSelected.id_especie, originZoneSelected.id_zona, originLevelSelected.id_nivel, originSubLevelSelected.id_subnivel, specieDestinationSelected.id_especie, destinationZoneSelected.id_zona, destinationLevelSelected.id_nivel, destinationSubLevelSelected.id_subnivel, user.id_tipousuario)
           .then((result) => {
             console.log('Tracking ok + '+result);
-            navigation.navigate('ShowStack', {
-              P1: 'Pollos',
-              P2: 'Cerdos',
+            SQLiteHelper.calculate(specieOriginSelected.id_especie, specieDestinationSelected.id_especie, originLevelSelected.id_nivel, destinationLevelSelected.id_nivel, user.id_tipousuario, originZoneSelected.id_zona, destinationZoneSelected.id_zona)
+            .then((items) => {
+              console.log('results : '+JSON.stringify(items));
+              if (items.length > 0) {
+                navigation.navigate('ShowScreen', {origin: specieOriginSelected.nombre,destination: specieDestinationSelected.nombre,results: items});
+              }
             })
+            .catch(console.log);
           })
           .catch(console.log);
         }},
@@ -295,7 +299,6 @@ class SearchScreen extends Component {
   }
 
   render() {
-    const { species, specieOriginSelected } = this.state;
     return (
       <View style={{flex: 1, backgroundColor: '#EAEAEA'}}>
       <ScrollView style={{flex: 1, backgroundColor: '#EAEAEA'}}>
@@ -346,10 +349,10 @@ class SearchScreen extends Component {
       </View>
       </ScrollView>
       <TouchableOpacity
-      onPress={() => {
-        this.goToShowScreen();
-      }}
-      style={styles.btn}>
+        onPress={() => {
+          this.goToShowScreen();
+        }}
+        style={styles.btn}>
         <Text style={styles.btnText}>CALCULAR</Text>        
       </TouchableOpacity>
       </View>
