@@ -1,29 +1,31 @@
 import React, { Component } from 'react';
 import Dimensions from 'Dimensions';
-import { ToastAndroid, TextInput, Text, StyleSheet, ImageBackground,
-  TouchableOpacity, View} from 'react-native';
+import { ToastAndroid, TextInput, Text, StyleSheet, Alert, TouchableOpacity, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scrollview';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Asset } from 'expo-asset';
 import * as FileSystem from 'expo-file-system';
 const databaseName = "nochesvacio.db";
+import { SQLiteHelper } from '../helpers/SQLiteHelper';
+import { NVLoader } from '../modules';
 
 export default class SignInScreen extends Component {
 
-    static navigationOptions= ({navigation}) =>({
-      headerStyle:{
-        backgroundColor: 'transparent', 
-        zIndex: 100,  
-      },
-      headerTransparent: true,
-    });
+  static navigationOptions= ({navigation}) =>({
+    headerStyle:{
+      backgroundColor: 'transparent', 
+      zIndex: 100,  
+    },
+    headerTransparent: true,
+  });
 
-  	constructor(props) {
+  constructor(props) {
 		super(props)
-		this.state={
+		this.state = {
 			Rut:'',
 			Password:'',
-			showPass: true,
+      showPass: true,
+      loading: false
     }
   }
 
@@ -37,8 +39,7 @@ export default class SignInScreen extends Component {
 		if (intlargo.length> 0){
 			crut = value
 			largo = crut.length;
-			if ( largo <2 ){
-				alert('rut inválido')
+			if ( largo <2 ) {
 				return false;
 			}
 			for ( i=0; i <crut.length ; i++ )
@@ -82,7 +83,6 @@ export default class SignInScreen extends Component {
 			}
 	
 			if ( dvr != dv.toLowerCase() ){
-				alert('El Rut ingresado es inválido')
 				return false;
 			}
 			//alert('El Rut Ingresado es Correcto!')
@@ -115,22 +115,40 @@ export default class SignInScreen extends Component {
   }
 
 	login = () => {
+    const { navigation } = this.props;
     const {Rut, Password} = this.state;
 		if(Rut==''){
-			ToastAndroid.show("Por favor ingrese RUT", ToastAndroid.CENTER);
+      Alert.alert("","Por favor ingrese RUT");
 			return
 		}
-		if(Password==''){
-			ToastAndroid.show("Por favor ingrese contraseña", ToastAndroid.CENTER);
+		if(Password=='') {
+      Alert.alert("","Por favor ingrese contraseña");
 			return
 		}
 		if(!this.Valida_Rut(Rut)){
-			ToastAndroid.show("Rut no valido", ToastAndroid.CENTER);
+      Alert.alert("","Rut no válido");
 			return
     }
-		this.props.navigation.navigate('SearchStack');
+    this.setState({loading: true});
+    SQLiteHelper.auth(Rut, Password)
+    .then( user => {
+      setTimeout(function () {
+        this.setState({loading: false});
+        navigation.navigate('SearchStack', { user: user });
+      }.bind(this), 2500);
+    })
+    .catch( error => {
+      this.setState({loading: false});
+      Alert.alert(
+        "",
+        error,
+        [{ text: "OK", onPress: () => {} }],
+        { cancelable: false }
+      );
+    })
 	}
   	render() {
+      const { loading } = this.state;
     	return (
 			<KeyboardAwareScrollView style={styles.container} behavior="padding">
 				<View style={{ flex:1, FlexDirection:'column', alignItems:'center', justifyContent: 'center', marginTop:100 }}>
@@ -150,7 +168,7 @@ export default class SignInScreen extends Component {
 						autoCorrect={false}
 						placeholderTextColor="#000000"
 						underlineColorAndroid="transparent"
-						keyboardType="numeric"
+						keyboardType="numbers-and-punctuation"
 					/>
 				</View>
 				<View style={{flexDirection:'row'}}>
@@ -177,7 +195,8 @@ export default class SignInScreen extends Component {
 					style={styles.btn}>
 					<Text style={styles.btnText}>Iniciar sesión</Text>
 				</TouchableOpacity>
-				</View>
+        </View>
+        <NVLoader visible={loading} text={'Iniciando Sesión'}/>
 			</KeyboardAwareScrollView>
     	);
   	}

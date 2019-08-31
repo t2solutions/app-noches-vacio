@@ -47,6 +47,19 @@ const SQLiteHelper = {
       })
     });
   },
+  auth(user, password) {
+    return SQLiteHelper.executeQuery("select * from usuario where rut=? and pass=?", [user, password])
+    .then(SQLiteHelper.checkUser)
+  },
+  checkUser(object) {
+    return new Promise(function(resolve, reject){
+        if ( object.rows.length > 0 ) {
+          resolve(object.rows.item(0))
+        } else {
+          reject('Credenciales inválidas.')
+        }
+     });
+  },
   setTracking(id_usuario, id_especie_or, id_zona_or, id_nivel_or, id_subnivel_or, id_especie_des, id_zona_des, id_nivel_des, id_subnivel_des, id_tipo_usuario) {
     return SQLiteHelper.executeQuery(
       `insert into trazabilidad ( id_usuario, id_especie_or, id_zona_or, id_nivel_or, id_subnivel_or, id_especie_des, id_zona_des, id_nivel_des, id_subnivel_des, id_tipo_usuario, fecha) 
