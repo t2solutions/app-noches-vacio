@@ -2,6 +2,7 @@ import _ from 'lodash';
 import React, { Component } from 'react';
 import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Picker, Alert } from 'react-native';
 import { SQLiteHelper } from '../helpers/SQLiteHelper';
+import { NVInputDropdown } from '../modules'
 
 class SearchScreen extends Component {
 
@@ -19,7 +20,7 @@ class SearchScreen extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      planta: '',
+      user: null,
       species: [],
       specieOriginSelected: null,
       specieDestinationSelected: null,
@@ -30,12 +31,19 @@ class SearchScreen extends Component {
       originLevels: [],
       destinationLevels: [],
       originLevelSelected: null,
-      destinationLevelSelected: null
+      destinationLevelSelected: null,
+      originSubLevels: [],
+      destinationSubLevels: [],
+      originSubLevelSelected: null,
+      destinationSubLevelSelected: null
     };
   }
 
   componentDidMount() {
+    const { navigation } = this.props;
     this.getSpecies();
+    const user = navigation.getParam('user');
+    this.setState({user: user});
   }
 
   getSpecies() {
@@ -70,113 +78,151 @@ class SearchScreen extends Component {
     .catch(console.log)
   }
 
+  getOriginSubLevels() {
+    const { originZoneSelected, originLevelSelected } = this.state;
+    if (!originZoneSelected || !originLevelSelected) {
+      return
+    }
+    SQLiteHelper.getArray("select * from subnivel where id_zona=? and id_nivel=?", [originZoneSelected.id_zona , originLevelSelected.id_nivel])
+    .then(items => { this.setState({originSubLevels: items}) })
+    .catch(console.log)
+  }
+
+  getDestinationSubLevels() {
+    const { destinationZoneSelected, destinationLevelSelected } = this.state;
+    if (!destinationZoneSelected || !destinationLevelSelected) {
+      return
+    }
+    SQLiteHelper.getArray("select * from subnivel where id_zona=? and id_nivel=?", [destinationZoneSelected.id_zona , destinationLevelSelected.id_nivel])
+    .then(items => { this.setState({destinationSubLevels: items}) })
+    .catch(console.log)
+  }
+
   renderPicker1() {
     const { species, specieOriginSelected } = this.state;
     return (
-      <Picker
-        selectedValue={(specieOriginSelected) ? specieOriginSelected.id_especie : null}
-        style={{ height: 50, flex: 1 }}
-        onValueChange={(itemValue, itemIndex) => {
-          this.setState({ specieOriginSelected: species[itemIndex] });
-          this.getOriginZones(itemValue);
-          this.getOriginLevels(itemValue);
-        }}>
-        {_.map(species, (specie, index) => {
-          return (
-            <Picker.Item label={specie.nombre} value={specie.id_especie} key={index}/>
-          );
-        })}
-      </Picker>
+      <NVInputDropdown 
+        placeholder="Origen"
+        items={species}
+        type={0}
+        onSelect={ itemValue => {
+          this.setState({ specieOriginSelected: itemValue, originZoneSelected: null, originLevelSelected: null, originLevelSubSelected: null, originSubLevels: [] });
+          this.getOriginZones(itemValue.id_especie);
+          this.getOriginLevels(itemValue.id_especie);
+        }} 
+        selected={(specieOriginSelected) ? specieOriginSelected.nombre : null } />
     );
   }
 
   renderPicker2() {
     const { species, specieDestinationSelected } = this.state;
     return (
-      <Picker
-        selectedValue={(specieDestinationSelected) ? specieDestinationSelected.id_especie : null}
-        style={{ height: 50,  flex: 1  }}
-        onValueChange={(itemValue, itemIndex) => {
-          this.setState({ specieDestinationSelected: species[itemIndex] })
-          this.getDestinationZones(itemValue);
-          this.getDestinationLevels(itemValue);
-        }}>
-        {_.map(species, (specie, index) => {
-          return (
-            <Picker.Item label={specie.nombre} value={specie.id_especie} key={index}/>
-          );
-        })}
-      </Picker>
+      <NVInputDropdown 
+        placeholder="Destino"
+        items={species}
+        type={0}
+        onSelect={ itemValue => {
+          this.setState({ specieDestinationSelected: itemValue, destinationZoneSelected: null, destinationLevelSelected: null, destinationSubLevelSelected: null, destinationSubLevels: [] });
+          this.getDestinationZones(itemValue.id_especie);
+          this.getDestinationLevels(itemValue.id_especie);
+        }} 
+        selected={(specieDestinationSelected) ? specieDestinationSelected.nombre : null } />
     );
   }
 
   renderPicker3() {
     const { originZones, originZoneSelected } = this.state;
     return (
-      <Picker
-        selectedValue={(originZoneSelected) ? originZoneSelected.id_zona : null}
-        style={{ height: 50, flex: 1 }}
-        onValueChange={(itemValue, itemIndex) => this.setState({ originZoneSelected: originZones[itemIndex] })}>
-        {_.map(originZones, (zone, index) => {
-          return (
-            <Picker.Item label={zone.descripcion} value={zone.id_zona} key={index}/>
-          );
-        })}
-      </Picker>
+      <NVInputDropdown 
+        placeholder="Origen"
+        items={originZones}
+        type={1}
+        onSelect={ itemValue => {
+          this.setState({ originZoneSelected: itemValue });
+          this.getOriginSubLevels();
+        }} 
+        selected={(originZoneSelected) ? originZoneSelected.descripcion : null } />
     );
   }
 
   renderPicker4() {
     const { destinationZones, destinationZoneSelected } = this.state;
     return (
-      <Picker
-        selectedValue={(destinationZoneSelected) ? destinationZoneSelected.id_zona : null}
-        style={{ height: 50,  flex: 1  }}
-        onValueChange={(itemValue, itemIndex) => this.setState({ destinationZoneSelected: destinationZones[itemIndex] })}>
-        {_.map(destinationZones, (zone, index) => {
-          return (
-            <Picker.Item label={zone.descripcion} value={zone.id_zona} key={index}/>
-          );
-        })}
-      </Picker>
+      <NVInputDropdown 
+        placeholder="Destino"
+        items={destinationZones}
+        type={1}
+        onSelect={ itemValue => {
+          this.setState({ destinationZoneSelected: itemValue });
+          this.getDestinationSubLevels();
+        }} 
+        selected={(destinationZoneSelected) ? destinationZoneSelected.descripcion : null } />
     );
   }
 
   renderPicker5() {
     const { originLevels, originLevelSelected } = this.state;
     return (
-      <Picker
-        selectedValue={(originLevelSelected) ? originLevelSelected.id_nivel : null}
-        style={{ height: 50, flex: 1 }}
-        onValueChange={(itemValue, itemIndex) => this.setState({ originLevelSelected: originLevels[itemIndex] })}>
-        {_.map(originLevels, (level, index) => {
-          return (
-            <Picker.Item label={level.nombre_nivel} value={level.id_nivel} key={index}/>
-          );
-        })}
-      </Picker>
+      <NVInputDropdown 
+        placeholder="Destino"
+        items={originLevels}
+        type={2}
+        onSelect={ itemValue => {
+          this.setState({ originLevelSelected: itemValue, originSubLevelSelected: null }, ()=> {
+            this.getOriginSubLevels();
+          });
+        }} 
+        selected={(originLevelSelected) ? originLevelSelected.nombre_nivel : null } />
     );
   }
 
   renderPicker6() {
     const { destinationLevels, destinationLevelSelected } = this.state;
     return (
-      <Picker
-        selectedValue={(destinationLevelSelected) ? destinationLevelSelected.id_nivel : null}
-        style={{ height: 50,  flex: 1  }}
-        onValueChange={(itemValue, itemIndex) => this.setState({ destinationLevelSelected: destinationLevels[itemIndex] })}>
-        {_.map(destinationLevels, (level, index) => {
-          return (
-            <Picker.Item label={level.nombre_nivel} value={level.id_nivel} key={index}/>
-          );
-        })}
-      </Picker>
+      <NVInputDropdown 
+        placeholder="Destino"
+        items={destinationLevels}
+        type={2}
+        onSelect={ itemValue => {
+          this.setState({ destinationLevelSelected: itemValue, destinationSubLevelSelected: null }, ()=> {
+            this.getDestinationSubLevels();
+          });
+        }} 
+        selected={(destinationLevelSelected) ? destinationLevelSelected.nombre_nivel : null } />
+    );
+  }
+
+  renderPicker7() {
+    const { originSubLevels, originSubLevelSelected } = this.state;
+    return (
+      <NVInputDropdown 
+        placeholder="Origen"
+        items={originSubLevels}
+        type={3}
+        onSelect={ itemValue => {
+          this.setState({ originSubLevelSelected: itemValue });
+        }} 
+        selected={(originSubLevelSelected) ? originSubLevelSelected.nombre_subnivel : null } />
+    );
+  }
+
+  renderPicker8() {
+    const { destinationSubLevels, destinationSubLevelSelected } = this.state;
+    return (
+      <NVInputDropdown 
+        placeholder="Destino"
+        items={destinationSubLevels}
+        type={3}
+        onSelect={ itemValue => {
+          this.setState({ destinationSubLevelSelected: itemValue });
+        }} 
+        selected={(destinationSubLevelSelected) ? destinationSubLevelSelected.nombre_subnivel : null } />
     );
   }
 
   goToShowScreen() {
     const { navigation } = this.props;
-    const { specieOriginSelected, specieDestinationSelected, originZoneSelected, destinationZoneSelected, originLevelSelected, destinationLevelSelected } = this.state;
+    const { user, specieOriginSelected, specieDestinationSelected, originZoneSelected, destinationZoneSelected, originLevelSelected, destinationLevelSelected, originSubLevelSelected, destinationSubLevelSelected } = this.state;
     const errors = [];
     const values = [];
     if ( !specieOriginSelected ) {
@@ -209,6 +255,16 @@ class SearchScreen extends Component {
     } else {
       values.push('Nivel de Destino : ' + destinationLevelSelected.nombre_nivel);
     }
+    if ( !originSubLevelSelected ) {
+      errors.push('- Subnivel de Origen');
+    } else {
+      values.push('Subnivel de Origen : ' + originSubLevelSelected.nombre_subnivel);
+    }
+    if ( !destinationSubLevelSelected ) {
+      errors.push('- Subnivel de Destino');
+    } else {
+      values.push('Subnivel de Destino : ' + destinationSubLevelSelected.nombre_subnivel);
+    }
     if (errors.length > 0) {
       Alert.alert('Faltan los siguientes datos', errors.join('\n'));
       return;
@@ -223,10 +279,15 @@ class SearchScreen extends Component {
           style: 'cancel',
         },
         {text: 'Continuar', onPress: () => {
-          navigation.navigate('ShowStack', {
-            P1: 'Pollos',
-            P2: 'Cerdos',
+          SQLiteHelper.setTracking(user.id_usuario, specieOriginSelected.id_especie, originZoneSelected.id_zona, originLevelSelected.id_nivel, originSubLevelSelected.id_subnivel, specieDestinationSelected.id_especie, destinationZoneSelected.id_zona, destinationLevelSelected.id_nivel, destinationSubLevelSelected.id_subnivel, user.id_tipousuario)
+          .then((result) => {
+            console.log('Tracking ok + '+result);
+            navigation.navigate('ShowStack', {
+              P1: 'Pollos',
+              P2: 'Cerdos',
+            })
           })
+          .catch(console.log);
         }},
       ],
       {cancelable: false},
@@ -234,39 +295,55 @@ class SearchScreen extends Component {
   }
 
   render() {
+    const { species, specieOriginSelected } = this.state;
     return (
       <View style={{flex: 1, backgroundColor: '#EAEAEA'}}>
       <ScrollView style={{flex: 1, backgroundColor: '#EAEAEA'}}>
-        <View style={styles.RowContainer}>
-          <View style={{flex: 1}}>
-            <Text style={{color: '#000000', textAlign: 'left', fontSize: 14}}>Especie de Origen</Text> 
-            { this.renderPicker1() }
+
+      <View style={{flex: 1, paddingVertical: 20, paddingHorizontal: 10}}>
+        <Text style={{marginBottom: 10, fontWeight: 'bold', fontSize: 20, color: 'black'}}>Selecciona Especie</Text>
+        <View style={{flex: 1, flexDirection: 'row'}}>
+          <View style={{flex: 1, marginRight: 5}}>
+            {this.renderPicker1()}
           </View>
-          <View style={{flex: 1}}>
-            <Text style={{color: '#000000', textAlign: 'left', fontSize: 14}}>Especie de Destino</Text> 
-            { this.renderPicker2() }
-          </View>
-        </View>
-        <View style={styles.RowContainer}>
-          <View style={{flex: 1}}>
-            <Text style={{color: '#000000', textAlign: 'left', fontSize: 14}}>Zona de Origen</Text> 
-            { this.renderPicker3() }
-          </View>
-          <View style={{flex: 1}}>
-            <Text style={{color: '#000000', textAlign: 'left', fontSize: 14}}>Zona de Destino</Text> 
-            { this.renderPicker4() }
+          <View style={{flex: 1, marginLeft: 5}}>
+            {this.renderPicker2()}
           </View>
         </View>
-        <View style={styles.RowContainer}>
-          <View style={{flex: 1}}>
-            <Text style={{color: '#000000', textAlign: 'left', fontSize: 14}}>Nivel de Origen</Text> 
-            { this.renderPicker5() }
+      </View>
+      <View style={{flex: 1, paddingVertical: 20, paddingHorizontal: 10}}>
+        <Text style={{marginBottom: 10, fontWeight: 'bold', fontSize: 20, color: 'black'}}>Selecciona Zona</Text>
+        <View style={{flex: 1, flexDirection: 'row'}}>
+          <View style={{flex: 1, marginRight: 5}}>
+            {this.renderPicker3()}
           </View>
-          <View style={{flex: 1}}>
-            <Text style={{color: '#000000', textAlign: 'left', fontSize: 14}}>Nivel de Destino</Text> 
-            { this.renderPicker6() }
+          <View style={{flex: 1, marginLeft: 5}}>
+            {this.renderPicker4()}
           </View>
         </View>
+      </View>
+      <View style={{flex: 1, paddingVertical: 20, paddingHorizontal: 10}}>
+        <Text style={{marginBottom: 10, fontWeight: 'bold', fontSize: 20, color: 'black'}}>Selecciona Nivel</Text>
+        <View style={{flex: 1, flexDirection: 'row'}}>
+          <View style={{flex: 1, marginRight: 5}}>
+            {this.renderPicker5()}
+          </View>
+          <View style={{flex: 1, marginLeft: 5}}>
+            {this.renderPicker6()}
+          </View>
+        </View>
+      </View>
+      <View style={{flex: 1, paddingVertical: 20, paddingHorizontal: 10}}>
+        <Text style={{marginBottom: 10, fontWeight: 'bold', fontSize: 20, color: 'black'}}>Selecciona Subnivel</Text>
+        <View style={{flex: 1, flexDirection: 'row'}}>
+          <View style={{flex: 1, marginRight: 5}}>
+            {this.renderPicker7()}
+          </View>
+          <View style={{flex: 1, marginLeft: 5}}>
+            {this.renderPicker8()}
+          </View>
+        </View>
+      </View>
       </ScrollView>
       <TouchableOpacity
       onPress={() => {

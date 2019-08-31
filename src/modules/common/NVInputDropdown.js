@@ -5,6 +5,7 @@ import { Text, TouchableOpacity } from 'react-native';
 import { NVInputDropdownStyles as styles } from './styles';
 import { Ionicons } from '@expo/vector-icons';
 import ModalDropdown from 'react-native-modal-dropdown';
+console.disableYellowBox = true;
 
 class NVInputDropdown extends Component {
 
@@ -17,19 +18,38 @@ class NVInputDropdown extends Component {
     onSelect(items[index]);
   }
 
+  getOptions() {
+    const { items, type } = this.props;
+    switch ( type ) {
+      case 0:
+        return _.map(items, option => option.nombre)
+      case 1:
+        return _.map(items, option => option.descripcion)
+      case 2:
+        return _.map(items, option => option.nombre_nivel)
+      case 3:
+        return _.map(items, option => option.nombre_subnivel)
+      }
+  }
+
   render() {
     const { containerStyles, placeholder, selected, items } = this.props;
     const containerHeight = (items.length > 0) ? (items.length > 4) ? 4 * 40: items.length * 40 : 0;
     return (
-      <TouchableOpacity style={[styles.container, containerStyles]} onPress={()=>{this.dropdown.show()}}>
+      <TouchableOpacity 
+        style={[styles.container, containerStyles]} onPress={()=> {
+          if (items.length > 0) {
+            this.dropdown.show()
+          }
+        }}>
         <ModalDropdown
           style={styles.containerDropDown}
           ref={component => this.dropdown = component}
           dropdownStyle={{ flex: 1, backgroundColor: 'white', marginLeft: 8, height: containerHeight}}
-          dropdownTextStyle={{ color: 'black', fontSize: 15, fontFamily: 'nunito-regular', height: 40 }}
+          dropdownTextStyle={{ color: 'black', fontSize: 15, height: 40 }}
           dropdownTextHighlightStyle={{backgroundColor: 'gray'}}
           onSelect={(index) => this.selectRow(index)}
-          options={_.map(items, option => option.descripcion)}>
+          options={this.getOptions()}>
           {selected ?
             <Text style={styles.dropDownInput}>{selected}</Text> :
             <Text style={styles.dropDownPlaceholder}>{placeholder} </Text>
@@ -47,7 +67,8 @@ NVInputDropdown.defaultProps = {
   placeholder: '',
   items: [{id: 'empty', description: 'Selecciona opción'}],
   selected: null,
-  onSelect: ()=> {}
+  onSelect: ()=> {},
+  type: 0
 }
 
 NVInputDropdown.propTypes = {
@@ -55,7 +76,8 @@ NVInputDropdown.propTypes = {
   placeholder: PropTypes.string,
   items: PropTypes.array,
   selected: PropTypes.string,
-  onSelect: ()=> {}
+  onSelect: ()=> {},
+  type: PropTypes.number
 }
 
 export { NVInputDropdown };

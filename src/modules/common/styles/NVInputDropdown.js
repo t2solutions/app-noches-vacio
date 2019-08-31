@@ -1,8 +1,6 @@
 const NVInputDropdownStyles = {
   container: {
     backgroundColor: 'transparent',
-    marginHorizontal: 20,
-    marginBottom: 8,
     borderWidth: 0.5,
     borderColor: '#d6d7da',
     borderRadius: 25,
