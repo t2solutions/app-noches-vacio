@@ -31,9 +31,11 @@
     "ios": {
       "supportsTablet": true
     },
-    "description": "",
+    "description": "Calculo noches de vacio contra BD local y Backend remoto",
     "packagerOpts": {
-      "assetExts": ["db"]
+      "assetExts": [
+        "db"
+      ]
     }
   }
 }

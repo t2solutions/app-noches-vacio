@@ -39,83 +39,296 @@ class SearchScreen extends Component {
     };
   }
 
-  componentDidMount() {
+  async componentDidMount() {
     const { navigation } = this.props;
-    this.getSpecies();
-    const user = navigation.getParam('user');
+    const user = navigation.getParam('user'); 
     this.setState({user: user});
+    //console.log('paso user -> '+JSON.stringify(user));
+    await this.getSpecies(user);
   }
 
-  getSpecies() {
-    SQLiteHelper.getArray("select * from especie", [])
-    .then(items => { this.setState({species: items}) })
-    .catch(console.log)
+  async getSpecies(usr) {
+
+    //console.log('user ->'+JSON.stringify(usr));
+
+    if (usr.usar_remoto == true) {
+
+			const responseSpecies = await fetch("http://antu.t2solutions.cl/combos/especie", {
+				method: 'GET',
+				headers: new Headers({
+          'Content-Type': 'application/json',
+          'token': usr.jwt
+				})
+      });
+      
+      var responseSpeciesFinal = await responseSpecies.json();
+      console.log("responseSpecies-> "+JSON.stringify(responseSpeciesFinal));
+      if (responseSpecies.status == 200) {
+        //Colar respuesta -> (id_especie, nombre)
+        //console.log(JSON.stringify(responseSpecies.data));
+        this.setState({species: responseSpeciesFinal.data}) ; 
+      }
+ 
+    } else {
+      var lstEspecies = await SQLiteHelper.getArray("select * from especie", []);
+      this.setState({species: lstEspecies}) ; 
+
+      //SQLiteHelper.getArray("select * from especie", [])
+      //.then(items => { this.setState({species: items}) })
+      //.catch(console.log) 
+    }
+
   }
 
-  getOriginZones(id_specie) {
-    id_specie = 1; //TODO: Remove when database it's complete
-    SQLiteHelper.getArray("select * from zona where id_especie=?", [id_specie])
-    .then(items => { this.setState({originZones: items}) })
-    .catch(console.log)
+   async getOriginZones(id_specie, usr) {
+
+    console.log('getOriginZones user ->'+usr);
+
+    if (usr.usar_remoto == true) {
+      console.log('Se procede a usar remoto');
+
+      const responseZones = await fetch("http://antu.t2solutions.cl/combos/zona/"+id_specie, {
+				method: 'GET',
+				headers: new Headers({
+          'Content-Type': 'application/json',
+          'token': usr.jwt
+				})
+      }); 
+
+      var responseZonesFinal = await responseZones.json();
+      console.log("responseSpecies-> "+JSON.stringify(responseZonesFinal));
+      if (responseZones.status == 200) {
+        //Colar respuesta -> (id_zona, descripcion, id_especie)
+        //console.log(JSON.stringify(responseSpecies.data));
+        this.setState({originZones: responseZonesFinal.data}) ; 
+      }    
+
+
+    } else {
+
+      // id_specie = 1; //TODO: Remove when database it's complete
+
+      var lstZonas = await SQLiteHelper.getArray("select * from zona where id_especie=?", [id_specie]);
+      this.setState({originZones: lstZonas}) ; 
+     
+      // SQLiteHelper.getArray("select * from zona where id_especie=?", [id_specie])
+      // .then(items => { this.setState({originZones: items}) })
+      // .catch(console.log)
+   }
+
   }
 
-  getDestinationZones(id_specie) {
-    id_specie = 1; //TODO: Remove when database it's complete
-    SQLiteHelper.getArray("select * from zona where id_especie=?", [id_specie])
-    .then(items => { this.setState({destinationZones: items}) })
-    .catch(console.log)
+  async getDestinationZones(id_specie, user) {
+
+    console.log('getDestinationZones user ->'+user);
+
+    if (user.usar_remoto == true) {
+      console.log('Se procede a usar remoto');
+
+      const responseZones = await fetch("http://antu.t2solutions.cl/combos/zona/"+id_specie, {
+				method: 'GET',
+				headers: new Headers({
+          'Content-Type': 'application/json',
+          'token': user.jwt
+				})
+      }); 
+
+      var responseZonesFinal = await responseZones.json();
+      console.log("responseSpecies-> "+JSON.stringify(responseZonesFinal));
+      if (responseZones.status == 200) {
+        //Colar respuesta -> (id_zona, descripcion, id_especie)
+        //console.log(JSON.stringify(responseSpecies.data));
+        this.setState({destinationZones: responseZonesFinal.data}) ; 
+      }      
+
+
+    } else {  
+      //id_specie = 1; //TODO: Remove when database it's complete
+
+      var lstZonas = await SQLiteHelper.getArray("select * from zona where id_especie=?", [id_specie]);
+      this.setState({destinationZones: lstZonas}) ; 
+
+      // SQLiteHelper.getArray("select * from zona where id_especie=?", [id_specie])
+      // .then(items => { this.setState({destinationZones: items}) })
+      // .catch(console.log)   
+    }
   }
 
-  getOriginLevels(id_specie) {
-    SQLiteHelper.getArray("select * from nivel where id_especie=?", [id_specie])
-    .then(items => { this.setState({originLevels: items}) })
-    .catch(console.log)
+  async getOriginLevels(id_specie, user) {
+
+    console.log('getOriginLevels user ->'+user);
+
+    if (user.usar_remoto == true) {
+      console.log('Se procede a usar remoto');
+
+      const responseLevels = await fetch("http://antu.t2solutions.cl/combos/nivel/"+id_specie, {
+				method: 'GET',
+				headers: new Headers({
+          'Content-Type': 'application/json',
+          'token': user.jwt
+				})
+      });   
+      
+      var responseLevelsFinal = await responseLevels.json();
+      console.log("responseLevels-> "+JSON.stringify(responseLevelsFinal));
+      if (responseLevels.status == 200) {
+        //Colar respuesta -> (id_zona, descripcion, id_especie)
+        //console.log(JSON.stringify(responseSpecies.data));
+        this.setState({originLevels: responseLevelsFinal.data}) ; 
+      }  
+ 
+
+    } else {
+      var lstNiveles = await SQLiteHelper.getArray("select * from nivel where id_especie=?", [id_specie]);
+      this.setState({originLevels: lstNiveles}) ; 
+
+      // SQLiteHelper.getArray("select * from nivel where id_especie=?", [id_specie])
+      // .then(items => { this.setState({originLevels: items}) })
+      // .catch(console.log)
+    }
+
   }
 
-  getDestinationLevels(id_specie) {
-    SQLiteHelper.getArray("select * from nivel where id_especie=?", [id_specie])
-    .then(items => { this.setState({destinationLevels: items}) })
-    .catch(console.log)
+  async getDestinationLevels(id_specie, user) {
+
+    console.log('getDestinationLevels user ->'+user);
+
+    if (user.usar_remoto == true) {
+      console.log('Se procede a usar remoto');
+
+      const responseLevels = await fetch("http://antu.t2solutions.cl/combos/nivel/"+id_specie, {
+				method: 'GET',
+				headers: new Headers({
+          'Content-Type': 'application/json',
+          'token': user.jwt
+				})
+      });   
+      
+      var responseLevelsFinal = await responseLevels.json();
+      console.log("responseLevels-> "+JSON.stringify(responseLevelsFinal));
+      if (responseLevels.status == 200) {
+        //Colar respuesta -> (id_zona, descripcion, id_especie)
+        //console.log(JSON.stringify(responseSpecies.data));
+        this.setState({destinationLevels: responseLevelsFinal.data}) ; 
+      }  
+
+
+    } else {
+
+      var lstNiveles = await SQLiteHelper.getArray("select * from nivel where id_especie=?", [id_specie]);
+      this.setState({destinationLevels: lstNiveles}) ; 
+
+      // SQLiteHelper.getArray("select * from nivel where id_especie=?", [id_specie])
+      // .then(items => { this.setState({destinationLevels: items}) })
+      // .catch(console.log)
+    }
   }
 
-  getOriginSubLevels() {
+  async getOriginSubLevels(user) {
     const { originZoneSelected, originLevelSelected } = this.state;
     if (!originZoneSelected || !originLevelSelected) {
       return
     }
-    SQLiteHelper.getArray("select * from subnivel where id_zona=? and id_nivel=?", [originZoneSelected.id_zona , originLevelSelected.id_nivel])
-    .then(items => { this.setState({originSubLevels: items}) })
-    .catch(console.log)
+
+    console.log('getOriginSubLevels user ->'+user);
+    console.log('originLevelSelected selectred ->'+originLevelSelected.id_nivel);
+
+    if (user.usar_remoto == true) {
+      console.log('Se procede a usar remoto');
+
+      const responseSubLevels = await fetch("http://antu.t2solutions.cl/combos/subnivel/"+originLevelSelected.id_nivel, {
+				method: 'GET',
+				headers: new Headers({
+          'Content-Type': 'application/json',
+          'token': user.jwt
+				})
+      });   
+      
+      var responseSubLevelsFinal = await responseSubLevels.json();
+      console.log("responseSubLevels Origin -> "+JSON.stringify(responseSubLevelsFinal));
+      if (responseSubLevels.status == 200) {
+        //Colar respuesta -> (id_zona, descripcion, id_especie)
+        //console.log(JSON.stringify(responseSpecies.data));
+        this.setState({originSubLevels: responseSubLevelsFinal.data}) ; 
+      }  
+
+    } else {
+
+      var lstNiveles = await SQLiteHelper.getArray("select * from subnivel where id_zona=? and id_nivel=?", [originZoneSelected.id_zona , originLevelSelected.id_nivel]);
+      this.setState({originSubLevels: lstNiveles}) ; 
+
+      // SQLiteHelper.getArray("select * from subnivel where id_zona=? and id_nivel=?", [originZoneSelected.id_zona , originLevelSelected.id_nivel])
+      // .then(items => { this.setState({originSubLevels: items}) })
+      // .catch(console.log)
+    }
   }
 
-  getDestinationSubLevels() {
+  async getDestinationSubLevels(user) {
     const { destinationZoneSelected, destinationLevelSelected } = this.state;
     if (!destinationZoneSelected || !destinationLevelSelected) {
       return
     }
-    SQLiteHelper.getArray("select * from subnivel where id_zona=? and id_nivel=?", [destinationZoneSelected.id_zona , destinationLevelSelected.id_nivel])
-    .then(items => { this.setState({destinationSubLevels: items}) })
-    .catch(console.log)
+
+    console.log('getDestinationSubLevels user ->'+user);
+    console.log('destinationLevelSelected selectred ->'+destinationLevelSelected.id_nivel);
+
+    if (user.usar_remoto == true) {
+      console.log('Se procede a usar remoto');
+
+      const responseSubLevels = await fetch("http://antu.t2solutions.cl/combos/subnivel/"+destinationLevelSelected.id_nivel, {
+				method: 'GET',
+				headers: new Headers({
+          'Content-Type': 'application/json',
+          'token': user.jwt
+				})
+      });   
+      
+      var responseSubLevelsFinal = await responseSubLevels.json();
+      console.log("responseSubLevels Destination -> "+JSON.stringify(responseSubLevelsFinal));
+      if (responseSubLevels.status == 200) {
+        //Colar respuesta -> (id_zona, descripcion, id_especie)
+        //console.log(JSON.stringify(responseSpecies.data));
+        this.setState({destinationSubLevels: responseSubLevelsFinal.data}) ; 
+      } 
+
+      
+    } else {
+
+      var lstNiveles = await SQLiteHelper.getArray("select * from subnivel where id_zona=? and id_nivel=?", [destinationZoneSelected.id_zona , destinationLevelSelected.id_nivel]);
+      this.setState({destinationSubLevels: lstNiveles}) ; 
+
+      // SQLiteHelper.getArray("select * from subnivel where id_zona=? and id_nivel=?", [destinationZoneSelected.id_zona , destinationLevelSelected.id_nivel])
+      // .then(items => { this.setState({destinationSubLevels: items}) })
+      // .catch(console.log)
+    }
+
   }
 
   renderPicker1() {
-    const { species, specieOriginSelected } = this.state;
+
+    //const { navigation } = this.props;
+    const { species, specieOriginSelected, user } = this.state;
+    console.log('se conoce user ->'+JSON.stringify(user));
+    //console.log('user.jwt ->'+user.jwt);
+    //console.log('se conoce param user -> '+navigation.getParam('user'));
+
     return (
+      
       <NVInputDropdown 
         placeholder="Origen"
         items={species}
         type={0}
         onSelect={ itemValue => {
           this.setState({ specieOriginSelected: itemValue, originZoneSelected: null, originLevelSelected: null, originLevelSubSelected: null, originSubLevels: [] });
-          this.getOriginZones(itemValue.id_especie);
-          this.getOriginLevels(itemValue.id_especie);
+          this.getOriginZones(itemValue.id_especie, user);
+          this.getOriginLevels(itemValue.id_especie, user);
         }} 
         selected={(specieOriginSelected) ? specieOriginSelected.nombre : null } />
     );
   }
 
   renderPicker2() {
-    const { species, specieDestinationSelected } = this.state;
+    const { species, specieDestinationSelected, user } = this.state;
     return (
       <NVInputDropdown 
         placeholder="Destino"
@@ -123,15 +336,15 @@ class SearchScreen extends Component {
         type={0}
         onSelect={ itemValue => {
           this.setState({ specieDestinationSelected: itemValue, destinationZoneSelected: null, destinationLevelSelected: null, destinationSubLevelSelected: null, destinationSubLevels: [] });
-          this.getDestinationZones(itemValue.id_especie);
-          this.getDestinationLevels(itemValue.id_especie);
+          this.getDestinationZones(itemValue.id_especie, user);
+          this.getDestinationLevels(itemValue.id_especie, user);
         }} 
         selected={(specieDestinationSelected) ? specieDestinationSelected.nombre : null } />
     );
   }
 
   renderPicker3() {
-    const { originZones, originZoneSelected } = this.state;
+    const { originZones, originZoneSelected, user } = this.state;
     return (
       <NVInputDropdown 
         placeholder="Origen"
@@ -139,14 +352,14 @@ class SearchScreen extends Component {
         type={1}
         onSelect={ itemValue => {
           this.setState({ originZoneSelected: itemValue });
-          this.getOriginSubLevels();
+          this.getOriginSubLevels(user);
         }} 
         selected={(originZoneSelected) ? originZoneSelected.descripcion : null } />
     );
   }
 
   renderPicker4() {
-    const { destinationZones, destinationZoneSelected } = this.state;
+    const { destinationZones, destinationZoneSelected, user } = this.state;
     return (
       <NVInputDropdown 
         placeholder="Destino"
@@ -154,14 +367,14 @@ class SearchScreen extends Component {
         type={1}
         onSelect={ itemValue => {
           this.setState({ destinationZoneSelected: itemValue });
-          this.getDestinationSubLevels();
+          this.getDestinationSubLevels(user);
         }} 
         selected={(destinationZoneSelected) ? destinationZoneSelected.descripcion : null } />
     );
   }
 
   renderPicker5() {
-    const { originLevels, originLevelSelected } = this.state;
+    const { originLevels, originLevelSelected, user } = this.state;
     return (
       <NVInputDropdown 
         placeholder="Destino"
@@ -169,7 +382,7 @@ class SearchScreen extends Component {
         type={2}
         onSelect={ itemValue => {
           this.setState({ originLevelSelected: itemValue, originSubLevelSelected: null }, ()=> {
-            this.getOriginSubLevels();
+            this.getOriginSubLevels(user);
           });
         }} 
         selected={(originLevelSelected) ? originLevelSelected.nombre_nivel : null } />
@@ -177,7 +390,7 @@ class SearchScreen extends Component {
   }
 
   renderPicker6() {
-    const { destinationLevels, destinationLevelSelected } = this.state;
+    const { destinationLevels, destinationLevelSelected, user } = this.state;
     return (
       <NVInputDropdown 
         placeholder="Destino"
@@ -185,7 +398,7 @@ class SearchScreen extends Component {
         type={2}
         onSelect={ itemValue => {
           this.setState({ destinationLevelSelected: itemValue, destinationSubLevelSelected: null }, ()=> {
-            this.getDestinationSubLevels();
+            this.getDestinationSubLevels(user);
           });
         }} 
         selected={(destinationLevelSelected) ? destinationLevelSelected.nombre_nivel : null } />
@@ -193,7 +406,7 @@ class SearchScreen extends Component {
   }
 
   renderPicker7() {
-    const { originSubLevels, originSubLevelSelected } = this.state;
+    const { originSubLevels, originSubLevelSelected, user } = this.state;
     return (
       <NVInputDropdown 
         placeholder="Origen"
@@ -207,7 +420,7 @@ class SearchScreen extends Component {
   }
 
   renderPicker8() {
-    const { destinationSubLevels, destinationSubLevelSelected } = this.state;
+    const { destinationSubLevels, destinationSubLevelSelected, user } = this.state;
     return (
       <NVInputDropdown 
         placeholder="Destino"
@@ -278,21 +491,63 @@ class SearchScreen extends Component {
           onPress: () => {},
           style: 'cancel',
         },
-        {text: 'Continuar', onPress: () => {
-          SQLiteHelper.setTracking(user.id_usuario, specieOriginSelected.id_especie, originZoneSelected.id_zona, originLevelSelected.id_nivel, originSubLevelSelected.id_subnivel, specieDestinationSelected.id_especie, destinationZoneSelected.id_zona, destinationLevelSelected.id_nivel, destinationSubLevelSelected.id_subnivel, user.id_tipousuario)
-          .then((result) => {
-            console.log('Tracking ok + '+result);
-            SQLiteHelper.calculate(specieOriginSelected.id_especie, specieDestinationSelected.id_especie, originLevelSelected.id_nivel, destinationLevelSelected.id_nivel, user.id_tipousuario, originZoneSelected.id_zona, destinationZoneSelected.id_zona)
-            .then((items) => {
-              console.log('results : '+JSON.stringify(items));
-              if (items.length > 0) {
-                navigation.navigate('ShowScreen', {origin: specieOriginSelected.nombre,destination: specieDestinationSelected.nombre,results: items});
+        {text: 'Continuar', onPress: async() => {
+
+          console.log('aplica online al presionar continuar -> '+user.usar_remoto);
+
+          var result = await SQLiteHelper.setTracking(user.id_usuario, specieOriginSelected.id_especie, originZoneSelected.id_zona, originLevelSelected.id_nivel, originSubLevelSelected.id_subnivel, specieDestinationSelected.id_especie, destinationZoneSelected.id_zona, destinationLevelSelected.id_nivel, destinationSubLevelSelected.id_subnivel, user.id_tipousuario);
+          console.log('aplica online -> '+user.usar_remoto);
+          console.log('Tracking ok + '+result);
+ 
+          if (user.usar_remoto==true) {
+
+            var jsonIdaCalculoRemoto = {
+                                        'idTipoUsuario': user.id_tipousuario,
+                                        'idUsuario': user.id_usuario, 
+                                        'idRol': user.id_rol, 
+                                        'idEspecieOrigen': specieOriginSelected.id_especie, 
+                                        'idZonaOrigen': originZoneSelected.id_zona,  
+                                        'idNivelOrigen': originLevelSelected.id_nivel, 
+                                        'idSubnivelOrigen' : originSubLevelSelected.id_subnivel,
+                                        'idEspecieDestino': specieDestinationSelected.id_especie, 
+                                        'idZonaDestino': destinationZoneSelected.id_zona, 
+                                        'idNivelDestino': destinationLevelSelected.id_nivel, 
+                                        'idSubnivelDestino': destinationSubLevelSelected.id_subnivel  
+            }
+            
+            //TODO Verificar invocacion a la operacion remota POST /calculo/grid
+            var responseRemoteCalc = await fetch("http://antu.t2solutions.cl/calculo/grid", {
+              method: 'POST',
+              headers: new Headers({
+                'Content-Type': 'application/json',
+                'token': user.jwt
+              }),
+              body: JSON.stringify(jsonIdaCalculoRemoto)               
+            });   
+            
+            var responseRemoteCalcFinal = await responseRemoteCalc.json();
+            console.log("responseRemoteCalc -> "+JSON.stringify(responseRemoteCalcFinal));
+            if (responseRemoteCalc.status == 200) {
+              if (responseRemoteCalcFinal.length > 0) {
+                navigation.navigate('ShowScreen', {origin: specieOriginSelected.nombre,destination: specieDestinationSelected.nombre,results: responseRemoteCalcFinal.data});
+              } else {
+                Alert.alert('No se encontraron datos para la pirámide seleccionada');
+                return;
               }
-            })
-            .catch(console.log);
-          })
-          .catch(console.log);
-        }},
+            } 
+
+          } else {
+            var items = await SQLiteHelper.calculate(specieOriginSelected.id_especie, specieDestinationSelected.id_especie, originLevelSelected.id_nivel, destinationLevelSelected.id_nivel, user.id_tipousuario, originZoneSelected.id_zona, destinationZoneSelected.id_zona);
+            console.log('results : '+JSON.stringify(items));
+            if (items.length > 0) {
+              navigation.navigate('ShowScreen', {origin: specieOriginSelected.nombre,destination: specieDestinationSelected.nombre,results: items});
+            } else {
+              Alert.alert('No se encontraron datos para la pirámide seleccionada');
+              return;
+            }
+          }
+        }
+      },
       ],
       {cancelable: false},
     );
@@ -307,7 +562,7 @@ class SearchScreen extends Component {
         <Text style={{marginBottom: 10, fontWeight: 'bold', fontSize: 20, color: 'black'}}>Selecciona Especie</Text>
         <View style={{flex: 1, flexDirection: 'row'}}>
           <View style={{flex: 1, marginRight: 5}}>
-            {this.renderPicker1()}
+            {this.renderPicker1(this.user)}
           </View>
           <View style={{flex: 1, marginLeft: 5}}>
             {this.renderPicker2()}

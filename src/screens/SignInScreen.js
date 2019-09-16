@@ -8,6 +8,11 @@ import * as FileSystem from 'expo-file-system';
 const databaseName = "nochesvacio.db";
 import { SQLiteHelper } from '../helpers/SQLiteHelper';
 import { NVLoader } from '../modules';
+import { NVLoader2 } from '../modules';
+import  decode  from 'jwt-decode';
+import moment from 'moment';
+import { resolveUri } from 'expo-asset/build/AssetSources';
+const jwtKey = 'secret'
 
 export default class SignInScreen extends Component {
 
@@ -24,8 +29,9 @@ export default class SignInScreen extends Component {
 		this.state = {
 			Rut:'',
 			Password:'',
-      showPass: true,
-      loading: false
+      		showPass: true,
+	  		loading: false,
+	  		transitionMessage: ''
     }
   }
 
@@ -96,7 +102,9 @@ export default class SignInScreen extends Component {
         intermediates: true
       });
       const localDatabase = await FileSystem.getInfoAsync(`${FileSystem.documentDirectory}SQLite/${databaseName}`);
-      if ( !localDatabase.exists ) {
+	  
+	//   if ( !localDatabase.exists ) {
+
         FileSystem.downloadAsync(
           Asset.fromModule(require('../../assets/www/'+databaseName)).uri,
           `${FileSystem.documentDirectory}SQLite/${databaseName}`
@@ -105,50 +113,342 @@ export default class SignInScreen extends Component {
         })
         .catch(error => {
           console.log('❗️ Database copy error : ' + error);
-        })
-      } else {
-        console.log('✅ Database exist');
-      }
+		})
+		
+    //   } else {
+    //     console.log('✅ Database exist');
+	//   }
+	  
     } catch (error) {
       console.log('❗️ Error : ' + error);
     }
   }
 
-	login = () => {
-    const { navigation } = this.props;
-    const {Rut, Password} = this.state;
-		if(Rut==''){
-      Alert.alert("","Por favor ingrese RUT");
+  	async obtieneUltimaSincro(idUsuario) { 
+		console.log('obtieneUltimaSincro idUsuario='+idUsuario);
+		var lastSyncDate = await SQLiteHelper.getLastSyncDate(idUsuario);
+		return lastSyncDate.valor;
+	}
+
+	login2 = async() => {
+		const { navigation } = this.props;
+		const {Rut, Password} = this.state;
+
+		if(Rut=='') {
+			Alert.alert("","Por favor ingrese RUT");
 			return
 		}
 		if(Password=='') {
-      Alert.alert("","Por favor ingrese contraseña");
+			Alert.alert("","Por favor ingrese contraseña");
 			return
 		}
 		if(!this.Valida_Rut(Rut)){
-      Alert.alert("","Rut no válido");
+			Alert.alert("","Rut no válido");
 			return
-    }
-    this.setState({loading: true});
-    SQLiteHelper.auth(Rut, Password)
-    .then( user => {
-      setTimeout(function () {
-        this.setState({loading: false});
-        navigation.navigate('SearchScreen', { user: user });
-      }.bind(this), 2500);
-    })
-    .catch( error => {
-      this.setState({loading: false});
-      Alert.alert(
-        "",
-        error,
-        [{ text: "OK", onPress: () => {} }],
-        { cancelable: false }
-      );
-    })
+		}
+
+		this.setState({loading: true, transitionMessage: 'Iniciando sesión'});
+
+		var response;
+		try {
+
+			const response = await fetch("http://antu.t2solutions.cl/login", {
+				method: 'POST',
+				headers: new Headers({
+					'Content-Type': 'application/json',
+				}),
+				body: JSON.stringify({
+					username: Rut,
+					password: Password
+				 }) 
+			});
+
+			console.log('Respuesta desde API en codigo pre eval ok: '+response.status); //statusText
+			console.log('response.ok? -> '+response.ok);
+
+			if (response.ok) {
+
+				if (response.status != 401) {
+					var responseJson = await response.json();
+
+					//alert(responseJson.token+' '+responseJson.status)
+					var rawtoken = responseJson.token;
+					//console.log('valor token crudo: '+rawtoken);
+					var decoded = decode(rawtoken);
+	
+					let rmoteUser = {
+									'id_usuario': decoded.idUsuario,
+									'id_tipousuario': decoded.idTipoUsuario,
+									'usar_remoto': true,
+									'id_rol': decoded.idRol,
+									'jwt': rawtoken 
+									};
+	
+					console.log('tkn decodificado: '+JSON.stringify(decoded)+ ' usuario: '+decoded.usr+ ' ult fecha sincronizacion: '+decoded.ultFechaSincronizacion);	
+					//Verificar respecto al last save (tabla parametros del userId)
+					//Si supera 24 hrs (pronto parametrizable) al AAAA-MM-DD HH:MM:SS se debe solicitar sincronizar
+					var remoteLastSyncDate = moment().format(decoded.ultFechaSincronizacion, 'YYYY-MM-DD hh:mm:ss', true);
+					console.log('prueba obtenida remota y convertida a Moment '+remoteLastSyncDate);
+						
+					var lastDate = await SQLiteHelper.getLastSyncDate(decoded.idUsuario);
+					var localLastSyncDate = moment().format(lastDate.valor, 'YYYY-MM-DD hh:mm:ss', true);
+							
+					var mLocalLastSyncDate = moment(localLastSyncDate); //.toDate()
+					var mRemoteLastSyncDate = moment(remoteLastSyncDate); //.toDate()
+					
+					console.log('fecha obtenida y convertida a Moment desde BD '+localLastSyncDate);
+					console.log('Moment hoy '+moment().format('YYYY-MM-DD hh:mm:ss'));
+					console.log('mLocalLastSyncDate '+mLocalLastSyncDate + ' mRemoteLastSyncDate '+mRemoteLastSyncDate);
+					
+					var difDays = moment().diff(mRemoteLastSyncDate, 'days');
+					if (difDays >= 1) {		
+						console.log('DIF DIAS -> '+difDays  );
+						this.setState({loading: true, transitionMessage: 'Ha pasado '+difDays+' dia(s) sin sincronizar la información... Sincronizando datos.'});
+	
+						var allData = await SQLiteHelper.getTracking(decoded.idUsuario);
+	
+						var pushData = {
+							"id_usuario": decoded.idUsuario,
+							"data": []
+						};
+	
+						if (allData.length > 0) {		
+							
+							pushData = {
+								"id_usuario": decoded.idUsuario,
+								"data": allData
+							};
+	
+							//console.log('results : '+JSON.stringify(allData));
+							console.log(JSON.stringify(pushData));
+	
+						}
+						this.setState({loading: false});
+						//Le deberia pasar objeto user -> navigation.navigate('SearchScreen', { user: user });
+						navigation.navigate('SearchScreen', { user: rmoteUser, id_usuario: decoded.idUsuario });
+	
+					} else {
+						this.setState({loading: false, transitionMessage: 'Iniciando Sesión'});
+						navigation.navigate('SearchScreen', { user: rmoteUser, id_usuario: decoded.idUsuario });								
+					}
+				} else {
+
+				}
+			} else if (response.status == 401) {
+				console.log('Deberia entrar aqui -> '+response.status);				
+				alert('Credenciales inválidas.');
+				this.setState({loading: false});
+			} else if (response.status == 502) {
+				//PM2 desconectado
+				throw new Error('Network request failed');
+			}
+
+		} catch (error) {
+			console.log('Se procede a conexion local? '+error.message);
+			if (error.message == 'Network request failed') {
+
+				SQLiteHelper.auth(Rut, Password)
+				.then( user => {
+
+				setTimeout(function () {
+
+				let rmoteUser = {
+					'id_usuario': user.id_usuario,
+					'id_tipousuario': user.id_tipousuario,
+					'usar_remoto': false,
+					'id_rol': user.id_rol,
+					'jwt': '' 
+					};
+
+					this.setState({loading: false, transitionMessage: ''});
+					navigation.navigate('SearchScreen', { user: rmoteUser });
+				}.bind(this), 2500);
+				})
+				.catch( error => {
+					this.setState({loading: false, transitionMessage: ''});
+					Alert.alert(
+						"",
+						error,
+						[{ text: "OK", onPress: () => {} }],
+						{ cancelable: false }
+					);
+				})	
+			} else {
+				this.setState({loading: false});
+				Alert.alert(
+					"",
+					error,
+					[{ text: "OK", onPress: () => {} }],
+					{ cancelable: false }
+				);				
+			}
+
+		
+
+		}
+
+
+
+
 	}
+
+
+	login = () => {
+		const { navigation } = this.props;
+		const {Rut, Password} = this.state;
+		if(Rut=='') {
+		Alert.alert("","Por favor ingrese RUT");
+				return
+		}
+		if(Password=='') {
+		Alert.alert("","Por favor ingrese contraseña");
+		return
+		}
+		if(!this.Valida_Rut(Rut)){
+		Alert.alert("","Rut no válido");
+		return
+		}
+
+		this.setState({loading: true, transitionMessage: 'Iniciando sesión'});
+		//Hacer login remoto
+		fetch("http://antu.t2solutions.cl/login", {
+			method: 'POST',
+			headers: new Headers({
+				'Content-Type': 'application/json',
+			}),
+			body: JSON.stringify({
+				username: Rut,
+				password: Password
+			 }) 
+		})
+
+		.then(response => {
+			console.log('Respuesta desde API en codigo pre eval ok: '+response.status); //statusText
+			console.log('response.ok? -> '+response.ok);
+			if (response.ok) {
+				return response.json();
+			} else {
+				if(response.status != 401) { //statusText
+					console.log('Respuesta desde API en codigo dentro de statusText: '+response.status);
+					//Al no obtener conexion remota, se accede via BD local
+					SQLiteHelper.auth(Rut, Password)
+					.then( user => {
+					setTimeout(function () {
+						this.setState({loading: false, transitionMessage: ''});
+						navigation.navigate('SearchScreen', { user: user });
+					}.bind(this), 2500);
+					})
+					.catch( error => {
+						this.setState({loading: false, transitionMessage: ''});
+						Alert.alert(
+							"",
+							error,
+							[{ text: "OK", onPress: () => {} }],
+							{ cancelable: false }
+						);
+					})
+				} else {
+					console.log('Respuesta desde API en codigo dentro de cuando es 401: '+response.status);
+					console.log(response.json());
+					reject('Credenciales inválidas.')
+					//throw new Error('Credenciales invalidas.');
+				
+					//alert('Credenciales inválidas.');
+				}//return response.json(); //throw new Error(response.status);			
+			}	
+		})
+		.then((responseJson) => {
+
+			//alert(responseJson.token+' '+responseJson.status)
+			var rawtoken = responseJson.token;
+			//console.log('valor token crudo: '+rawtoken);
+			var decoded = decode(rawtoken);
+		
+			let rmoteUser = {
+							 'id_usuario': decoded.idUsuario,
+							 'id_tipousuario': decoded.idTipoUsuario 
+							};
+
+			console.log('tkn decodificado: '+JSON.stringify(decoded)+ ' usuario: '+decoded.usr+ ' ult fecha sincronizacion: '+decoded.ultFechaSincronizacion);	
+			//Verificar respecto al last save (tabla parametros del userId)
+			//Si supera 24 hrs al AAAA-MM-DD HH:MM:SS se debe solicitar sincronizar
+			var remoteLastSyncDate = moment().format(decoded.ultFechaSincronizacion, 'YYYY-MM-DD hh:mm:ss', true);
+			console.log('prueba obtenida remota y convertida a Moment '+remoteLastSyncDate);
+			
+			//Se comenta por ahora
+			//console.log('TEST retornando desde promise '+this.obtieneUltimaSincro(decoded.idUsuario).valor);
+
+			   SQLiteHelper.getLastSyncDate(decoded.idUsuario)			
+			   .then(lastDate => {			 	
+					var localLastSyncDate = moment().format(lastDate.valor, 'YYYY-MM-DD hh:mm:ss', true);
+					
+					var mLocalLastSyncDate = moment(localLastSyncDate); //.toDate()
+					var mRemoteLastSyncDate = moment(remoteLastSyncDate); //.toDate()
+					
+					console.log('fecha obtenida y convertida a Moment desde BD '+localLastSyncDate);
+					console.log('Moment hoy '+moment().format('YYYY-MM-DD hh:mm:ss'));
+					console.log('mLocalLastSyncDate '+mLocalLastSyncDate + ' mRemoteLastSyncDate '+mRemoteLastSyncDate);
+					
+					var difDays = moment().diff(mRemoteLastSyncDate, 'days');
+					if (difDays >= 1) {		
+						console.log('DIF DIAS -> '+difDays  );
+
+						//this.setState({loading: true, transitionMessage: 'Ha pasado '+difDays+' dia(s) sin sincronizar la información... Sincronizando datos.'});
+						
+						SQLiteHelper.getTracking(decoded.idUsuario)
+						.then(allData => {
+
+							var pushData = {
+								"id_usuario": decoded.idUsuario,
+								"data": []
+							};
+
+						  if (allData.length > 0) {		
+							  
+							pushData = {
+								"id_usuario": decoded.idUsuario,
+								"data": allData
+							};
+
+							this.setState({loading: true, transitionMessage: 'Ha pasado '+difDays+' dia(s) sin sincronizar la información... Sincronizando datos.'});
+							//console.log('results : '+JSON.stringify(allData));
+							console.log(JSON.stringify(pushData));
+
+						  }
+						  this.setState({loading: false});
+						  //Le deberia pasar objeto user -> navigation.navigate('SearchScreen', { user: user });
+						  navigation.navigate('SearchScreen', { user: rmoteUser, id_usuario: decoded.idUsuario });
+						})
+						.catch(console.log);	
+
+						//do stuff
+						//this.setState({loading: true, transitionMessage: 'Iniciando Sesión 2'});
+						//this.setState({loading: false});
+						//navigation.navigate('SearchScreen', { user: decoded.usr, id_usuario: decoded.idUsuario });	
+
+
+					} else {
+						this.setState({loading: false, transitionMessage: 'Iniciando Sesión'});
+						navigation.navigate('SearchScreen', { user: rmoteUser, id_usuario: decoded.idUsuario });								
+					} 
+
+				});
+			
+
+			//this.setState({loading: false});
+			//navigation.navigate('SearchScreen', { user: decoded.usr, id_usuario: decoded.idUsuario });								
+		
+		
+		})
+		.catch((error) => {			
+			console.error(error);
+		});	
+	}
+
+
   	render() {
-      const { loading } = this.state;
+	  const { loading } = this.state;
+	  const { transitionMessage } = this.state; //'Iniciando sesión'; 
     	return (
 			<KeyboardAwareScrollView style={styles.container} behavior="padding">
 				<View style={{ flex:1, FlexDirection:'column', alignItems:'center', justifyContent: 'center', marginTop:100 }}>
@@ -191,13 +491,13 @@ export default class SignInScreen extends Component {
 					/>
 				</View>
 				<TouchableOpacity
-					onPress={() => this.login()}
+					onPress={() => this.login2()}
 					style={styles.btn}>
 					<Text style={styles.btnText}>Iniciar sesión</Text>
 				</TouchableOpacity>
         </View>
-        <NVLoader visible={loading} text={'Iniciando Sesión'}/>
-			</KeyboardAwareScrollView>
+        <NVLoader visible={loading} text={transitionMessage} />
+		</KeyboardAwareScrollView>
     	);
   	}
 }

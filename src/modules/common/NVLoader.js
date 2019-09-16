@@ -30,7 +30,7 @@ class NVLoader extends Component {
 
 NVLoader.defaultProps = {
   visible: false,
-  text: 'CARGANDO'
+  text: 'Conectando'
 };
 
 NVLoader.propTypes = {
