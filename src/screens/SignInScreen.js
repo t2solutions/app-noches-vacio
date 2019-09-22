@@ -252,9 +252,11 @@ export default class SignInScreen extends Component {
 
 				setTimeout(function () {
 
+					console.log('id_usuario -> '+user.id_usuario+' , user.id_tipo_usuario ->'+user.id_tipo_usuario);	
+
 				let rmoteUser = {
 					'id_usuario': user.id_usuario,
-					'id_tipousuario': user.id_tipousuario,
+					'id_tipousuario': user.id_tipo_usuario, //id_tipo_usuario
 					'usar_remoto': false,
 					'id_rol': user.id_rol,
 					'jwt': '' 

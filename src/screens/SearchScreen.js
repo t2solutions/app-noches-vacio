@@ -154,14 +154,22 @@ class SearchScreen extends Component {
     }
   }
 
-  async getOriginLevels(id_specie, user) {
+  async getOriginLevels(id_specie, user, id_zona) {
 
+    // const { originZoneSelected } = this.state;
+    // if (!originZoneSelected) {
+    //   console.log('originZoneSelected ->'+originZoneSelected);
+    //   return
+    // }   
+
+    console.log('id_zona pasado -> '+id_zona);
     console.log('getOriginLevels user ->'+user);
 
     if (user.usar_remoto == true) {
       console.log('Se procede a usar remoto');
 
-      const responseLevels = await fetch("http://antu.t2solutions.cl/combos/nivel/"+id_specie, {
+      //TODO: Enviar ademas el id de la zona (id_zona) al backend
+      const responseLevels = await fetch("http://antu.t2solutions.cl/combos/nivel/"+id_specie+"/"+id_zona, {
 				method: 'GET',
 				headers: new Headers({
           'Content-Type': 'application/json',
@@ -179,8 +187,12 @@ class SearchScreen extends Component {
  
 
     } else {
-      var lstNiveles = await SQLiteHelper.getArray("select * from nivel where id_especie=?", [id_specie]);
+      //Cambio ASL y TTH
+      var lstNiveles = await SQLiteHelper.getArray("select * from nivel n join nivel_zona nz on (nz.id_nivel = n.id_nivel) join zona z on (z.id_zona=nz.id_zona) where z.id_especie=? and nz.id_zona=?", [id_specie, id_zona]);
+      //var lstNiveles = await SQLiteHelper.getArray("select * from nivel where id_especie=?", [id_specie]);
       this.setState({originLevels: lstNiveles}) ; 
+
+      //select * from nivel n join nivel_zona nz on (nz.id_nivel = n.id_nivel) join zona z on (z.id_zona=nz.id_zona) where n.id_nivel=1 and z.id_especie=1;
 
       // SQLiteHelper.getArray("select * from nivel where id_especie=?", [id_specie])
       // .then(items => { this.setState({originLevels: items}) })
@@ -189,14 +201,20 @@ class SearchScreen extends Component {
 
   }
 
-  async getDestinationLevels(id_specie, user) {
+  async getDestinationLevels(id_specie, user, id_zona) {
+
+    // const { destinationZoneSelected } = this.state;
+    // if (!destinationZoneSelected) {
+    //   return
+    // } 
 
     console.log('getDestinationLevels user ->'+user);
 
     if (user.usar_remoto == true) {
       console.log('Se procede a usar remoto');
 
-      const responseLevels = await fetch("http://antu.t2solutions.cl/combos/nivel/"+id_specie, {
+      //TODO - Pasar al backend el id_zona
+      const responseLevels = await fetch("http://antu.t2solutions.cl/combos/nivel/"+id_specie+"/"+id_zona, {
 				method: 'GET',
 				headers: new Headers({
           'Content-Type': 'application/json',
@@ -214,8 +232,9 @@ class SearchScreen extends Component {
 
 
     } else {
-
-      var lstNiveles = await SQLiteHelper.getArray("select * from nivel where id_especie=?", [id_specie]);
+      //Cambio ASL y TTH
+      var lstNiveles = await SQLiteHelper.getArray("select * from nivel n join nivel_zona nz on (nz.id_nivel = n.id_nivel) join zona z on (z.id_zona=nz.id_zona) where z.id_especie=? and nz.id_zona=?", [id_specie, id_zona]);
+      //var lstNiveles = await SQLiteHelper.getArray("select * from nivel where id_especie=?", [id_specie]);
       this.setState({destinationLevels: lstNiveles}) ; 
 
       // SQLiteHelper.getArray("select * from nivel where id_especie=?", [id_specie])
@@ -225,18 +244,19 @@ class SearchScreen extends Component {
   }
 
   async getOriginSubLevels(user) {
-    const { originZoneSelected, originLevelSelected } = this.state;
-    if (!originZoneSelected || !originLevelSelected) {
+    const { originZoneSelected, originLevelSelected, specieOriginSelected } = this.state;
+    if (!originZoneSelected || !originLevelSelected || !specieOriginSelected) {
       return
     }
 
     console.log('getOriginSubLevels user ->'+user);
-    console.log('originLevelSelected selectred ->'+originLevelSelected.id_nivel);
+    console.log('originLevelSelected selectred -> '+originLevelSelected.id_nivel);
+    console.log('specieOriginSelected selected -> '+specieOriginSelected.id_especie);
 
     if (user.usar_remoto == true) {
       console.log('Se procede a usar remoto');
 
-      const responseSubLevels = await fetch("http://antu.t2solutions.cl/combos/subnivel/"+originLevelSelected.id_nivel, {
+      const responseSubLevels = await fetch("http://antu.t2solutions.cl/combos/subnivel/"+originLevelSelected.id_nivel+"/"+originZoneSelected.id_zona+"/"+specieOriginSelected.id_especie, {
 				method: 'GET',
 				headers: new Headers({
           'Content-Type': 'application/json',
@@ -253,8 +273,9 @@ class SearchScreen extends Component {
       }  
 
     } else {
-
-      var lstNiveles = await SQLiteHelper.getArray("select * from subnivel where id_zona=? and id_nivel=?", [originZoneSelected.id_zona , originLevelSelected.id_nivel]);
+      //TTH - Cambio en consulta
+      var lstNiveles = await SQLiteHelper.getArray("select * from subnivel sn join zona z on(sn.id_zona=z.id_zona and z.id_especie=?) where sn.id_zona=? and sn.id_nivel=?", [specieOriginSelected.id_especie, originZoneSelected.id_zona , originLevelSelected.id_nivel]); 
+      //var lstNiveles = await SQLiteHelper.getArray("select * from subnivel where id_zona=? and id_nivel=?", [originZoneSelected.id_zona , originLevelSelected.id_nivel]);
       this.setState({originSubLevels: lstNiveles}) ; 
 
       // SQLiteHelper.getArray("select * from subnivel where id_zona=? and id_nivel=?", [originZoneSelected.id_zona , originLevelSelected.id_nivel])
@@ -264,18 +285,20 @@ class SearchScreen extends Component {
   }
 
   async getDestinationSubLevels(user) {
-    const { destinationZoneSelected, destinationLevelSelected } = this.state;
-    if (!destinationZoneSelected || !destinationLevelSelected) {
+    const { destinationZoneSelected, destinationLevelSelected, specieDestinationSelected } = this.state;
+    if (!destinationZoneSelected || !destinationLevelSelected || !specieDestinationSelected) {
       return
     }
 
     console.log('getDestinationSubLevels user ->'+user);
-    console.log('destinationLevelSelected selectred ->'+destinationLevelSelected.id_nivel);
+    console.log('destinationLevelSelected selectred -> '+destinationLevelSelected.id_nivel);
+    console.log('specieDestinationSelected selected -> '+specieDestinationSelected.id_especie);
+    console.log('destinationZoneSelected selected -> '+destinationZoneSelected.id_zona);
 
     if (user.usar_remoto == true) {
       console.log('Se procede a usar remoto');
 
-      const responseSubLevels = await fetch("http://antu.t2solutions.cl/combos/subnivel/"+destinationLevelSelected.id_nivel, {
+      const responseSubLevels = await fetch("http://antu.t2solutions.cl/combos/subnivel/"+destinationLevelSelected.id_nivel+"/"+destinationZoneSelected.id_zona+"/"+specieDestinationSelected.id_especie, {
 				method: 'GET',
 				headers: new Headers({
           'Content-Type': 'application/json',
@@ -293,8 +316,9 @@ class SearchScreen extends Component {
 
       
     } else {
-
-      var lstNiveles = await SQLiteHelper.getArray("select * from subnivel where id_zona=? and id_nivel=?", [destinationZoneSelected.id_zona , destinationLevelSelected.id_nivel]);
+      //TTH Cambio en consulta
+      var lstNiveles = await SQLiteHelper.getArray("select * from subnivel sn join zona z on(sn.id_zona=z.id_zona and z.id_especie=?) where sn.id_zona=? and sn.id_nivel=?", [specieDestinationSelected.id_especie, destinationZoneSelected.id_zona , destinationLevelSelected.id_nivel]); 
+      //var lstNiveles = await SQLiteHelper.getArray("select * from subnivel where id_zona=? and id_nivel=?", [destinationZoneSelected.id_zona , destinationLevelSelected.id_nivel]);
       this.setState({destinationSubLevels: lstNiveles}) ; 
 
       // SQLiteHelper.getArray("select * from subnivel where id_zona=? and id_nivel=?", [destinationZoneSelected.id_zona , destinationLevelSelected.id_nivel])
@@ -315,13 +339,13 @@ class SearchScreen extends Component {
     return (
       
       <NVInputDropdown 
-        placeholder="Origen"
+        placeholder="Especie Origen"
         items={species}
         type={0}
         onSelect={ itemValue => {
           this.setState({ specieOriginSelected: itemValue, originZoneSelected: null, originLevelSelected: null, originLevelSubSelected: null, originSubLevels: [] });
           this.getOriginZones(itemValue.id_especie, user);
-          this.getOriginLevels(itemValue.id_especie, user);
+          //this.getOriginLevels(itemValue.id_especie, user);
         }} 
         selected={(specieOriginSelected) ? specieOriginSelected.nombre : null } />
     );
@@ -331,43 +355,45 @@ class SearchScreen extends Component {
     const { species, specieDestinationSelected, user } = this.state;
     return (
       <NVInputDropdown 
-        placeholder="Destino"
+        placeholder="Especie Destino"
         items={species}
         type={0}
         onSelect={ itemValue => {
           this.setState({ specieDestinationSelected: itemValue, destinationZoneSelected: null, destinationLevelSelected: null, destinationSubLevelSelected: null, destinationSubLevels: [] });
           this.getDestinationZones(itemValue.id_especie, user);
-          this.getDestinationLevels(itemValue.id_especie, user);
+          //this.getDestinationLevels(itemValue.id_especie, user);
         }} 
         selected={(specieDestinationSelected) ? specieDestinationSelected.nombre : null } />
     );
   }
 
   renderPicker3() {
-    const { originZones, originZoneSelected, user } = this.state;
+    const { specieOriginSelected, originZones, originZoneSelected, user } = this.state;
     return (
       <NVInputDropdown 
-        placeholder="Origen"
+        placeholder="Zona Origen"
         items={originZones}
         type={1}
         onSelect={ itemValue => {
           this.setState({ originZoneSelected: itemValue });
-          this.getOriginSubLevels(user);
+          this.getOriginLevels(specieOriginSelected.id_especie, user, itemValue.id_zona);
+          //this.getOriginSubLevels(user);
         }} 
         selected={(originZoneSelected) ? originZoneSelected.descripcion : null } />
     );
   }
 
   renderPicker4() {
-    const { destinationZones, destinationZoneSelected, user } = this.state;
+    const { specieDestinationSelected, destinationZones, destinationZoneSelected, user } = this.state;
     return (
       <NVInputDropdown 
-        placeholder="Destino"
+        placeholder="Zona Destino"
         items={destinationZones}
         type={1}
         onSelect={ itemValue => {
           this.setState({ destinationZoneSelected: itemValue });
-          this.getDestinationSubLevels(user);
+          this.getDestinationLevels(specieDestinationSelected.id_especie, user, itemValue.id_zona);
+          //this.getDestinationSubLevels(user);
         }} 
         selected={(destinationZoneSelected) ? destinationZoneSelected.descripcion : null } />
     );
@@ -377,7 +403,7 @@ class SearchScreen extends Component {
     const { originLevels, originLevelSelected, user } = this.state;
     return (
       <NVInputDropdown 
-        placeholder="Destino"
+        placeholder="Nivel Origen"
         items={originLevels}
         type={2}
         onSelect={ itemValue => {
@@ -393,7 +419,7 @@ class SearchScreen extends Component {
     const { destinationLevels, destinationLevelSelected, user } = this.state;
     return (
       <NVInputDropdown 
-        placeholder="Destino"
+        placeholder="Nivel Destino"
         items={destinationLevels}
         type={2}
         onSelect={ itemValue => {
@@ -493,7 +519,10 @@ class SearchScreen extends Component {
         },
         {text: 'Continuar', onPress: async() => {
 
+          console.log('user se conoce como: ->'+JSON.stringify(user));
           console.log('aplica online al presionar continuar -> '+user.usar_remoto);
+          console.log('user.id_tipo_usuario como id_tipousuario -> '+user.id_tipousuario);
+          console.log('user.id_tipo_usuario como id_tipo_usuario -> '+user.id_tipo_usuario);
 
           var result = await SQLiteHelper.setTracking(user.id_usuario, specieOriginSelected.id_especie, originZoneSelected.id_zona, originLevelSelected.id_nivel, originSubLevelSelected.id_subnivel, specieDestinationSelected.id_especie, destinationZoneSelected.id_zona, destinationLevelSelected.id_nivel, destinationSubLevelSelected.id_subnivel, user.id_tipousuario);
           console.log('aplica online -> '+user.usar_remoto);
@@ -507,10 +536,12 @@ class SearchScreen extends Component {
                                         'idRol': user.id_rol, 
                                         'idEspecieOrigen': specieOriginSelected.id_especie, 
                                         'idZonaOrigen': originZoneSelected.id_zona,  
+                                        //Comentario ASL: El id_nivel no va en esto, va el cod_nivel
                                         'idNivelOrigen': originLevelSelected.id_nivel, 
                                         'idSubnivelOrigen' : originSubLevelSelected.id_subnivel,
                                         'idEspecieDestino': specieDestinationSelected.id_especie, 
                                         'idZonaDestino': destinationZoneSelected.id_zona, 
+                                        //Comentario ASL: El id_nivel no va en esto, va el cod_nivel
                                         'idNivelDestino': destinationLevelSelected.id_nivel, 
                                         'idSubnivelDestino': destinationSubLevelSelected.id_subnivel  
             }
@@ -537,7 +568,12 @@ class SearchScreen extends Component {
             } 
 
           } else {
-            var items = await SQLiteHelper.calculate(specieOriginSelected.id_especie, specieDestinationSelected.id_especie, originLevelSelected.id_nivel, destinationLevelSelected.id_nivel, user.id_tipousuario, originZoneSelected.id_zona, destinationZoneSelected.id_zona);
+            console.log('destinationLevelSelected.id_nivel -> '+destinationLevelSelected.id_nivel);
+            console.log('originLevelSelected.id_nivel -> '+originLevelSelected.id_nivel);
+            console.log('destinationLevelSelected.cod_nivel -> '+destinationLevelSelected.cod_nivel);
+            console.log('originLevelSelected.cod_nivel -> '+originLevelSelected.cod_nivel);
+
+            var items = await SQLiteHelper.calculate(specieOriginSelected.id_especie, specieDestinationSelected.id_especie, originLevelSelected.id_nivel, destinationLevelSelected.id_nivel, user.id_rol, originZoneSelected.id_zona, destinationZoneSelected.id_zona);
             console.log('results : '+JSON.stringify(items));
             if (items.length > 0) {
               navigation.navigate('ShowScreen', {origin: specieOriginSelected.nombre,destination: specieDestinationSelected.nombre,results: items});

@@ -48,7 +48,9 @@ const SQLiteHelper = {
     });
   },
   auth(user, password) {
-    return SQLiteHelper.executeQuery("SELECT usuario.*,tipo_usuario.id_rol,tipo_usuario.descripcion AS descripcion_rol FROM usuario,tipo_usuario WHERE tipo_usuario.id_tipousuario = usuario.id_tipousuario AND rut=? AND pass=?", [user, password])
+    // Cambio ASL
+    return SQLiteHelper.executeQuery("SELECT usuario.*,tipo_usuario.id_rol,tipo_usuario.descripcion AS descripcion_rol FROM usuario,tipo_usuario WHERE usuario.id_tipo_usuario != 4 AND rut=? AND pass=?", [user, password])
+    //return SQLiteHelper.executeQuery("SELECT usuario.*,tipo_usuario.id_rol,tipo_usuario.descripcion AS descripcion_rol FROM usuario,tipo_usuario WHERE tipo_usuario.id_tipousuario = usuario.id_tipousuario AND rut=? AND pass=?", [user, password])
     //select * from usuario where rut=? and pass=?
     .then(SQLiteHelper.checkUser);
   },
@@ -61,6 +63,7 @@ const SQLiteHelper = {
         }
      });
   },
+  //Comentario ASL: guardar historial en trazabilidad para los niveles no es id_nivel que llega sino cod_nivel (hay que rescatar ese dato de los combos tanto para origen como destino)
   setTracking(id_usuario, id_especie_or, id_zona_or, id_nivel_or, id_subnivel_or, id_especie_des, id_zona_des, id_nivel_des, id_subnivel_des, id_tipo_usuario) {
     return SQLiteHelper.executeQuery(
       `insert into trazabilidad ( id_usuario, id_especie_or, id_zona_or, id_nivel_or, id_subnivel_or, id_especie_des, id_zona_des, id_nivel_des, id_subnivel_des, id_tipo_usuario, fecha) 
@@ -69,9 +72,21 @@ const SQLiteHelper = {
   },
   calculate(id_especie_or, id_especie_des, id_nivel_or, id_nivel_des, id_rol, id_zona_or, id_zona_des) {
     return SQLiteHelper.getArray(
-      `select e.nombre, n.nombre_nivel, pe.valor from piramide_especies pe join especie e on (e.id_especie=pe.especie_destino) join nivel n on (n.cod_nivel=pe.nivel_destino) 
-      where pe.especie_origen=? and pe.especie_destino=? and pe.nivel_origen=? and pe.nivel_destino=? and pe.tipo_rol=? and pe.id_zona_origen=? and pe.id_zona_destino=?;`,
-      [id_especie_or, id_especie_des, id_nivel_or, id_nivel_des, id_rol, id_zona_or, id_zona_des]);
+      // `select e.nombre, n.nombre_nivel, pe.valor from piramide_especies pe join especie e on (e.id_especie=pe.especie_destino) join nivel n on (n.cod_nivel=pe.nivel_destino) 
+      // where pe.especie_origen=? and pe.especie_destino=? and pe.nivel_origen=? and pe.nivel_destino=? and pe.tipo_rol=? and pe.id_zona_origen=? and pe.id_zona_destino=?;`,
+      // [id_especie_or, id_especie_des, id_nivel_or, id_nivel_des, id_rol, id_zona_or, id_zona_des]);
+      `select e.nombre, n.nombre_nivel, pe.valor from piramide_especie pe
+      join especie e on(e.id_especie=pe.id_especie_destino)
+      join zona z on(z.id_zona=pe.id_zona_destino and z.id_especie=pe.id_especie_destino)
+      join nivel_zona nz on(nz.id_zona=z.id_zona and nz.id_nivel=pe.nivel_destino)
+      join nivel n on(n.id_nivel=nz.id_nivel and n.id_nivel=pe.nivel_destino)
+      where pe.id_especie_origen=? 
+      and pe.id_especie_destino=?
+      and pe.id_zona_origen=? 
+      and pe.id_zona_destino=? 
+      and pe.nivel_origen=(select cod_nivel from nivel where id_nivel=?) 
+      and pe.nivel_destino=(select cod_nivel from nivel where id_nivel=?)
+      and pe.id_rol=?;`,[id_especie_or, id_especie_des, id_zona_or, id_zona_des, id_nivel_or, id_nivel_des, id_rol ]);
   },
   getLastSyncDate(id_usuario) {
     return SQLiteHelper.executeQuery(`select valor from parametros where clave='lastsave';`)
