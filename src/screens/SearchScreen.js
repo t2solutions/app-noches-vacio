@@ -256,7 +256,7 @@ class SearchScreen extends Component {
     if (user.usar_remoto == true) {
       console.log('Se procede a usar remoto');
 
-      const responseSubLevels = await fetch("http://antu.t2solutions.cl/combos/subnivel/"+originLevelSelected.id_nivel+"/"+originZoneSelected.id_zona+"/"+specieOriginSelected.id_especie, {
+      const responseSubLevels = await fetch("http://antu.t2solutions.cl/combos/subnivel/"+originLevelSelected.id_nivel+"/"+originZoneSelected.id_especieid_especie+"/"+specieOriginSelected.id_zona, {
 				method: 'GET',
 				headers: new Headers({
           'Content-Type': 'application/json',
@@ -298,7 +298,7 @@ class SearchScreen extends Component {
     if (user.usar_remoto == true) {
       console.log('Se procede a usar remoto');
 
-      const responseSubLevels = await fetch("http://antu.t2solutions.cl/combos/subnivel/"+destinationLevelSelected.id_nivel+"/"+destinationZoneSelected.id_zona+"/"+specieDestinationSelected.id_especie, {
+      const responseSubLevels = await fetch("http://antu.t2solutions.cl/combos/subnivel/"+destinationLevelSelected.id_nivel+"/"+destinationZoneSelected.id_especie+"/"+specieDestinationSelected.id_zona, {
 				method: 'GET',
 				headers: new Headers({
           'Content-Type': 'application/json',
