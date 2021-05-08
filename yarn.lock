@@ -3006,6 +3006,11 @@ jsonify@~0.0.0:
   resolved "https://registry.yarnpkg.com/jsonify/-/jsonify-0.0.0.tgz#2c74b6ee41d93ca51b7b5aaee8f503631d252a73"
   integrity sha1-LHS27kHZPKUbe1qu6PUDYx0lKnM=
 
+jwt-decode@^2.2.0:
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/jwt-decode/-/jwt-decode-2.2.0.tgz#7d86bd56679f58ce6a84704a657dd392bba81a79"
+  integrity sha1-fYa9VmefWM5qhHBKZX3TkruoGnk=
+
 kind-of@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/kind-of/-/kind-of-1.1.0.tgz#140a3d2d41a36d2efcfa9377b62c24f8495a5c44"
@@ -3570,6 +3575,11 @@ mkdirp@^0.5.0, mkdirp@^0.5.1:
   integrity sha1-MAV0OOrGz3+MR2fzhkjWaX11yQM=
   dependencies:
     minimist "0.0.8"
+
+moment@^2.24.0:
+  version "2.29.1"
+  resolved "https://registry.yarnpkg.com/moment/-/moment-2.29.1.tgz#b2be769fa31940be9eeea6469c075e35006fa3d3"
+  integrity sha512-kHmoybcPV8Sqy59DwNDY3Jefr64lK/by/da0ViFcuA4DH0vQg5Q6Ze5VimxkfQNSC+Mls/Kx53s7TjP1RhFEDQ==
 
 morgan@^1.9.0:
   version "1.9.1"
@@ -4176,9 +4186,9 @@ query-string@^6.1.0:
     strict-uri-encode "^2.0.0"
 
 querystringify@^2.1.1:
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/querystringify/-/querystringify-2.1.1.tgz#60e5a5fd64a7f8bfa4d2ab2ed6fdf4c85bad154e"
-  integrity sha512-w7fLxIRCRT7U8Qu53jQnJyPkYZIaR4n5151KMfcJlO/A9397Wxb1amJvROTK6TOnp7PfoAmg/qXiNHI+08jRfA==
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/querystringify/-/querystringify-2.2.0.tgz#3345941b4153cb9d082d8eee4cda2016a9aef7f6"
+  integrity sha512-FIqgj2EUvTa7R50u0rGsyTftzjYmv/a3hO345bZNrqabNqjtgiDMgmo4mkUjd+nzU5oF3dClKqFIPUKybUyqoQ==
 
 randomatic@^3.0.0:
   version "3.1.1"
@@ -4318,6 +4328,13 @@ react-native-loading-spinner-overlay@^1.0.1:
   dependencies:
     prop-types "^15.6.2"
 
+react-native-modal-dropdown@^0.6.2:
+  version "0.6.2"
+  resolved "https://registry.yarnpkg.com/react-native-modal-dropdown/-/react-native-modal-dropdown-0.6.2.tgz#da6027b3546d2031fbce46242bffc95561e13599"
+  integrity sha512-1jzByA+ME+q0mZJ2rZrLsf6jVwJhNxNHdg7I50xYZ9oYJsmmKwF9r/ks95tZxxks4Zvd7/FnaveNtyd+uevXAw==
+  dependencies:
+    prop-types "^15.6.0"
+
 react-native-modal@^11.3.1:
   version "11.3.1"
   resolved "https://registry.yarnpkg.com/react-native-modal/-/react-native-modal-11.3.1.tgz#9f67728b36fdc299f97d3da1d131190a0337b89b"
@@ -4325,6 +4342,11 @@ react-native-modal@^11.3.1:
   dependencies:
     prop-types "^15.6.2"
     react-native-animatable "^1.3.1"
+
+react-native-pulse@^1.0.7:
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/react-native-pulse/-/react-native-pulse-1.0.7.tgz#5a8dc60cb6585f90ce8400beb74fbf89e5f7cd1b"
+  integrity sha512-PQvek/hC2YZddzJgyJT9FZbg37eZKl1rcYNlHbSItL3XZ0n3zF5jxFRrYLyGqHnRuRPHoY7qnrdHe4qVwy3Jnw==
 
 react-native-ratings@^6.3.0:
   version "6.3.1"
@@ -5409,9 +5431,9 @@ urix@^0.1.0:
   integrity sha1-2pN/emLiH+wf0Y1Js1wpNQZ6bHI=
 
 url-parse@^1.4.4:
-  version "1.4.7"
-  resolved "https://registry.yarnpkg.com/url-parse/-/url-parse-1.4.7.tgz#a8a83535e8c00a316e403a5db4ac1b9b853ae278"
-  integrity sha512-d3uaVyzDB9tQoSXFvuSUNFibTd9zxd2bkVrDRvF5TmvWWQwqE4lgYJ5m+x1DbecWkw+LK4RNl2CU1hHuOKPVlg==
+  version "1.5.1"
+  resolved "https://registry.yarnpkg.com/url-parse/-/url-parse-1.5.1.tgz#d5fa9890af8a5e1f274a2c98376510f6425f6e3b"
+  integrity sha512-HOfCOUJt7iSYzEx/UqgtwKRMC6EU91NFhsCHMv9oM03VJcVo2Qrp8T8kI9D7amFf1cu+/3CEhgb3rF9zL7k85Q==
   dependencies:
     querystringify "^2.1.1"
     requires-port "^1.0.0"
